@@ -1,20 +1,30 @@
-g.chart {
-  fill: orange;
+svg {
+  margin-left: 40px;
 }
 
 input[type=range] {
   width: 300px;
   direction: rtl;
-  margin-left: 890px;
+  margin-left: 930px;
+  margin-top: 10px;
 }
 
 circle {
-  opacity: 0.1;
+  fill: grey;
+  opacity: 0.4;
   r: 8;
 }
 
 circle.selected {
-  stroke: midnightblue;
+  stroke: chocolate;
   stroke-width: 2;
+}
+
+circle.trail {
+  fill: burlywood;
+  opacity: 0.2;
+}
+
+circle.trail.selected {
   opacity: 0.8;
 }

@@ -2,7 +2,8 @@
 
 const dataFilepath = 'dataset.csv'
 
-d3.csv(dataFilepath, formatDataset, drawChart)
+d3.csv(dataFilepath, formatDataset)
+  .then(drawChart)
 
 function formatDataset(d) {
 
@@ -18,15 +19,11 @@ function formatDataset(d) {
 
 function drawChart(dataset) {
 
-  console.table(dataset.slice(0, 3))
-
   // make a random share class as if selected
   const shareClasses = Array.from(new Set(dataset.map(function(d) { return d.share_class })))
   var randomShareClass = shareClasses[Math.floor(Math.random()*shareClasses.length)]
   let chosenShareClass = randomShareClass
-  dataset
-    .filter(function(d) { return d.share_class == chosenShareClass })
-    .forEach(function(i) { i.selected = true })
+  console.log({chosenShareClass})
 
   //
   // CHART CONFIG
@@ -47,12 +44,12 @@ function drawChart(dataset) {
   // SCALES
   //
 
-  var x = d3.scale.linear()
+  var x = d3.scaleLinear()
     .domain(d3.extent(dataset, function(d) { return d.volatility }))
     .range([0, width])
     .nice()
 
-  var y = d3.scale.linear()
+  var y = d3.scaleLinear()
     .domain(d3.extent(dataset, function(d) { return d.performance }))
     .range([height, 0])
     .nice()
@@ -71,17 +68,19 @@ function drawChart(dataset) {
       .on('input', function() {
 
         var sliderValue = this.value
-        d3.select('output').text(sliderValue)
 
-        var dataInSelectedRange = dataset.filter(function(d) { return d.period < sliderValue })
-        dataInSelectedRange = d3.nest()
-          .key(function(d) { return d.share_class })
-	  .rollup(function(group) { return group[0] })
-          .entries(dataInSelectedRange)
-	  .map(function(d) { return d.values })
+        dataset
+          .forEach(function(i) { i.selected = false })
 
-        drawData(dataInSelectedRange)
-	console.log(sliderValue)
+        var dataInSelectedRange = retrieveShareClassMostRecent(dataset, sliderValue)
+        var dataShareClassHistoric = dataset.filter(function(d) { return d.share_class == chosenShareClass })
+
+        dataInSelectedRange.filter(function(d) { return d.share_class == chosenShareClass })
+          .forEach(function(i) { i.selected = true })
+
+        var dataVisible = dataShareClassHistoric.concat(dataInSelectedRange)
+        drawData(dataVisible)
+
       })
 
   //
@@ -110,11 +109,9 @@ function drawChart(dataset) {
   // X AXIS & GRID
   //
 
-  var xAxis = d3.svg.axis()
+  var xAxis = d3.axisBottom()
     .scale(x)
-    .orient('bottom')
     .ticks(6, ',.1')
-    .outerTickSize(1)
 
   svg.append('g')
     .classed('xaxis', true)
@@ -125,10 +122,9 @@ function drawChart(dataset) {
   // Y AXIS & GRID
   //
 
-  var yAxis = d3.svg.axis()
+  var yAxis = d3.axisLeft()
     .scale(y)
-    .orient('left')
-    .outerTickSize(1)
+    .ticks(6, ',.1')
 
   svg.append('g')
     .classed('yaxis', true)
@@ -139,32 +135,38 @@ function drawChart(dataset) {
   // DRAW DATA
   //
 
-  var dataInSelectedRange = dataset.filter(function(d) { return d.period < startingSliderValue })
-  dataInSelectedRange = d3.nest()
-    .key(function(d) { return d.share_class })
-    .rollup(function(group) { return group[0] })
-    .entries(dataInSelectedRange)
-    .map(function(d) { return d.values })
+  var dataInSelectedRange = retrieveShareClassMostRecent(dataset, startingSliderValue)
   var dataShareClassHistoric = dataset.filter(function(d) { return d.share_class == chosenShareClass })
-  dataInSelectedRange.concat(dataShareClassHistoric)
-  drawData(dataInSelectedRange)
 
-  console.log({dataShareClassHistoric})
-  console.log({dataInSelectedRange})
+  dataInSelectedRange.filter(function(d) { return d.share_class == chosenShareClass })
+    .forEach(function(i) { i.selected = true })
+
+  dataShareClassHistoric
+    .forEach(function(i) { i.trail = true })
+
+  var dataVisible = new Set(dataShareClassHistoric.concat(dataInSelectedRange))
+  drawData(dataVisible)
+
 
   function drawData(dataset) {
 
     var circles = innerChart.selectAll('circle')
       .data(dataset)
 
+    // TODO DRY
     circles.enter()
       .append('circle')
+        .attr('cx', function(d) { return x(d.volatility) })
+        .attr('cy', function(d) { return y(d.performance) })
+        .classed('selected', function(d) { return d.selected })
+        .classed('trail', function(d) { return d.trail })
+        .attr('data', function (d) { return 'period: ' + d.period + ', perf: ' + d.performance + ', vol: ' + d.volatility })
 
     circles
-      .style('fill', 'gray')
       .attr('cx', function(d) { return x(d.volatility) })
       .attr('cy', function(d) { return y(d.performance) })
       .classed('selected', function(d) { return d.selected })
+      .classed('trail', function(d) { return d.trail })
       .attr('data', function (d) { return 'period: ' + d.period + ', perf: ' + d.performance + ', vol: ' + d.volatility })
 
     circles.exit()
@@ -173,4 +175,17 @@ function drawChart(dataset) {
   }
 
 }
+
+function retrieveShareClassMostRecent(dataset, sliderValue) {
+
+  function groupby(d) { return d.share_class }
+  function extractFirst(group) { return group[0] }
+
+  var dataInSelectedRange = dataset.filter(function(d) { return d.period < sliderValue })
+  var data = Array.from(d3.rollup(dataInSelectedRange, extractFirst, groupby).values())
+
+  return data
+
+}
+
 
