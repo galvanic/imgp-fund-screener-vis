@@ -161,6 +161,8 @@ function drawChart(dataset) {
         .classed('selected', function(d) { return d.selected })
         .classed('trail', function(d) { return d.trail })
         .attr('data', function (d) { return 'period: ' + d.period + ', perf: ' + d.performance + ', vol: ' + d.volatility })
+        .append('title')
+          .text(function (d) { return 'share class: ' + d.share_class + '\nperiod: ' + d.period + '\nperf: ' + d.performance + '\nvol: ' + d.volatility })
 
     circles
       .attr('cx', function(d) { return x(d.volatility) })
@@ -168,6 +170,8 @@ function drawChart(dataset) {
       .classed('selected', function(d) { return d.selected })
       .classed('trail', function(d) { return d.trail })
       .attr('data', function (d) { return 'period: ' + d.period + ', perf: ' + d.performance + ', vol: ' + d.volatility })
+      .append('title')
+        .text(function (d) { return 'share class: ' + d.share_class + '\nperiod: ' + d.period + '\nperf: ' + d.performance + '\nvol: ' + d.volatility })
 
     circles.exit()
       .remove()
