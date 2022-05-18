@@ -1,0 +1,20 @@
+g.chart {
+  fill: orange;
+}
+
+input[type=range] {
+  width: 300px;
+  direction: rtl;
+  margin-left: 890px;
+}
+
+circle {
+  opacity: 0.1;
+  r: 8;
+}
+
+circle.selected {
+  stroke: midnightblue;
+  stroke-width: 2;
+  opacity: 0.8;
+}
