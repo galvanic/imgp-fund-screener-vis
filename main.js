@@ -95,21 +95,7 @@ function drawChart(dataset) {
     .step(50)
     .ticks(5)
     .default(startingSliderValue)
-    .on('onchange', function(sliderValue) {
-
-      dataset
-        .forEach(i => i.selected = false)
-
-      let dataInSelectedRange = retrieveShareClassMostRecent(dataset, sliderValue)
-      let dataShareClassHistoric = dataset.filter(d => d.share_class == chosenShareClass )
-
-      dataInSelectedRange.filter(d => d.share_class == chosenShareClass)
-        .forEach(i => i.selected = true)
-
-      let dataVisible = dataShareClassHistoric.concat(dataInSelectedRange)
-      drawData(dataVisible)
-
-    })
+    .on('onchange', function(sliderValue) { updateOnInput(dataset, chosenShareClass, sliderValue) })
 
   const sliderElement = svg
     .append('g')
@@ -147,18 +133,34 @@ function drawChart(dataset) {
   // DRAW DATA
   //
 
-  let dataInSelectedRange = retrieveShareClassMostRecent(dataset, startingSliderValue)
-  let dataShareClassHistoric = dataset.filter(d => d.share_class == chosenShareClass)
+  updateOnInput(dataset, chosenShareClass, startingSliderValue)
 
-  dataInSelectedRange.filter(d => d.share_class == chosenShareClass)
-    .forEach(i => i.selected = true)
+  function updateOnInput(dataset, chosenShareClass, sliderValue) {
 
-  dataShareClassHistoric
-    .forEach(i => i.trail = true)
+    dataset
+      .forEach(i => i.selected = false)
 
-  let dataVisible = new Set(dataShareClassHistoric.concat(dataInSelectedRange))
-  drawData(dataVisible)
+    // retrieve most recent share class
+    function groupby(d) { return d.share_class }
+    function extractFirstItem(group) { return group[0] }
 
+    var dataInSelectedRange = dataset.filter(d => d.period < sliderValue)
+    dataInSelectedRange = Array
+      .from(d3.rollup(dataInSelectedRange, extractFirstItem, groupby)
+      .values())
+
+    let dataShareClassHistoric = dataset.filter(d => d.share_class == chosenShareClass)
+
+    dataInSelectedRange.filter(d => d.share_class == chosenShareClass)
+      .forEach(i => i.selected = true)
+
+    dataShareClassHistoric
+      .forEach(i => i.trail = true)
+
+    let dataVisible = new Set(dataShareClassHistoric.concat(dataInSelectedRange))
+    drawData(dataVisible)
+
+  }
 
   function drawData(dataset) {
 
@@ -189,18 +191,4 @@ function drawChart(dataset) {
   }
 
 }
-
-
-function retrieveShareClassMostRecent(dataset, sliderValue) {
-
-  function groupby(d) { return d.share_class }
-  function extractFirstItem(group) { return group[0] }
-
-  let dataInSelectedRange = dataset.filter(d => d.period < sliderValue)
-  let data = Array.from(d3.rollup(dataInSelectedRange, extractFirstItem, groupby).values())
-
-  return data
-
-}
-
 
