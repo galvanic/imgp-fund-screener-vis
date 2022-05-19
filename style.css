@@ -2,6 +2,18 @@ svg {
   margin-left: 40px;
 }
 
+svg #slider line.track-fill {
+  stroke: lightgrey;
+}
+
+svg #slider line.track-inset {
+  stroke: chocolate;
+}
+
+svg #slider line.track {
+  stroke: chocolate;
+}
+
 input[type=range] {
   width: 300px;
   direction: rtl;

@@ -94,11 +94,8 @@ function drawChart(dataset) {
     .fill('chocolate')
     .step(50)
     .ticks(5)
-    .default([startingSliderValue, d3.min(dataset, d => d.period + 1 )])
-    .on('onchange', function(sliderInput) {
-
-      let sliderValue, _
-      [_, sliderValue] = sliderInput
+    .default(startingSliderValue)
+    .on('onchange', function(sliderValue) {
 
       dataset
         .forEach(i => i.selected = false)
