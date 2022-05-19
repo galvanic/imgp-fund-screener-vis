@@ -157,16 +157,11 @@ function drawChart(dataset) {
 
     var circles = innerChart.selectAll('circle')
       .data(dataset)
+      .join(selectionEnter, selectionUpdate, selectionExit)
 
-    circles.enter()
-      .append('circle')
-        .call(drawCircles)
-
-    circles
-      .call(drawCircles)
-
-    circles.exit()
-      .remove()
+    function selectionEnter(selection) { selection.append('circle').call(drawCircles) }
+    function selectionUpdate(selection) { selection.call(drawCircles) }
+    function selectionExit(selection) { selection.remove() }
 
   }
 
