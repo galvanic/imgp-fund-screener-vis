@@ -54,6 +54,11 @@ function drawChart(dataset) {
     .range([height, 0])
     .nice()
 
+  var historicness = d3.scaleLinear()
+    .domain(d3.extent(dataset, (d) => d.period ))
+    .range([1, 0.5])
+    .nice()
+
   //
   // SLIDER
   //
@@ -170,6 +175,7 @@ function drawChart(dataset) {
     circles
       .attr('cx', (d) => x(d.volatility))
       .attr('cy', (d) => y(d.performance))
+      .attr('filter', (d) => 'brightness(' + historicness(d.period) + ')')
       .classed('selected', (d) => d.selected)
       .classed('trail', (d) => d.trail)
       .append('title')
