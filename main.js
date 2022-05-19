@@ -20,7 +20,7 @@ function formatDataset(d) {
 function drawChart(dataset) {
 
   // make a random share class as if selected
-  const shareClasses = Array.from(new Set(dataset.map(function(d) { return d.share_class })))
+  const shareClasses = Array.from(new Set(dataset.map(d => d.share_class )))
   const randomShareClass = shareClasses[Math.floor(Math.random()*shareClasses.length)]
   let chosenShareClass = randomShareClass
   console.log({chosenShareClass})
@@ -29,13 +29,14 @@ function drawChart(dataset) {
   // CHART CONFIG
   //
 
-  const startingSliderValue = d3.max(dataset, function(d) { return d.period })
+  const startingSliderValue = d3.max(dataset, d => d.period )
+
   const totalWidth = 1200
   const totalHeight = 800
   const bufferChartAxisBottom = 10
   const bufferChartAxisLeft = 10
   // we implicitly assume the margins leave enough space for the elements around the innerchart, ie axes & slider
-  const margin = { top: 50, right: 10, bottom: 40, left: 50 }
+  const margin = { top: 60, right: 10, bottom: 40, left: 50 }
   // following measures relate to innerchart
   const width = totalWidth - margin.left - margin.right
   const height = totalHeight - margin.top - margin.bottom
@@ -45,17 +46,17 @@ function drawChart(dataset) {
   //
 
   const x = d3.scaleLinear()
-    .domain(d3.extent(dataset, (d) => d.volatility ))
+    .domain(d3.extent(dataset, d => d.volatility ))
     .range([0, width])
     .nice()
 
   const y = d3.scaleLinear()
-    .domain(d3.extent(dataset, (d) => d.performance ))
+    .domain(d3.extent(dataset, d => d.performance ))
     .range([height, 0])
     .nice()
 
   const historicness = d3.scaleLinear()
-    .domain(d3.extent(dataset, (d) => d.period ))
+    .domain(d3.extent(dataset, d => d.period ))
     .range([1, 0.5])
     .nice()
 
@@ -141,13 +142,13 @@ function drawChart(dataset) {
   //
 
   let dataInSelectedRange = retrieveShareClassMostRecent(dataset, startingSliderValue)
-  let dataShareClassHistoric = dataset.filter((d) => d.share_class == chosenShareClass)
+  let dataShareClassHistoric = dataset.filter(d => d.share_class == chosenShareClass)
 
-  dataInSelectedRange.filter((d) => d.share_class == chosenShareClass)
-    .forEach((i) => i.selected = true)
+  dataInSelectedRange.filter(d => d.share_class == chosenShareClass)
+    .forEach(i => i.selected = true)
 
   dataShareClassHistoric
-    .forEach((i) => i.trail = true)
+    .forEach(i => i.trail = true)
 
   let dataVisible = new Set(dataShareClassHistoric.concat(dataInSelectedRange))
   drawData(dataVisible)
@@ -168,13 +169,13 @@ function drawChart(dataset) {
   function drawCircles(circles) {
 
     circles
-      .attr('cx', (d) => x(d.volatility))
-      .attr('cy', (d) => y(d.performance))
-      .attr('filter', (d) => 'brightness(' + historicness(d.period) + ')')
-      .classed('selected', (d) => d.selected)
-      .classed('trail', (d) => d.trail)
+      .attr('cx', d => x(d.volatility))
+      .attr('cy', d => y(d.performance))
+      .attr('filter', d => 'brightness(' + historicness(d.period) + ')')
+      .classed('selected', d => d.selected)
+      .classed('trail', d => d.trail)
       .append('title')
-        .text((d) => 'share class: ' + d.share_class
+        .text(d => 'share class: ' + d.share_class
                    + '\nperiod: ' + d.period
                    + '\nperf: ' + d.performance
                    + '\nvol: ' + d.volatility)
@@ -189,7 +190,7 @@ function retrieveShareClassMostRecent(dataset, sliderValue) {
   function groupby(d) { return d.share_class }
   function extractFirstItem(group) { return group[0] }
 
-  let dataInSelectedRange = dataset.filter((d) => d.period < sliderValue)
+  let dataInSelectedRange = dataset.filter(d => d.period < sliderValue)
   let data = Array.from(d3.rollup(dataInSelectedRange, extractFirstItem, groupby).values())
 
   return data
