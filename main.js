@@ -29,6 +29,7 @@ function drawChart(dataset) {
   // CHART CONFIG
   //
 
+  const sliderWidth = 300
   const startingSliderValue = d3.max(dataset, d => d.period )
 
   const totalWidth = 1200
@@ -61,35 +62,6 @@ function drawChart(dataset) {
     .nice()
 
   //
-  // SLIDER
-  //
-
-  const slider = d3.select('div#vis')
-    .append('input')
-      .attr('type', 'range')
-      .attr('min', d3.min(dataset, (d) => d.period + 1 ))
-      .attr('max', d3.max(dataset, (d) => d.period - 1 ))
-      .attr('step', 1)
-      .attr('value', startingSliderValue)
-      .on('input', function() {
-
-        let sliderValue = this.value
-
-        dataset
-          .forEach((i) => i.selected = false)
-
-        let dataInSelectedRange = retrieveShareClassMostRecent(dataset, sliderValue)
-        let dataShareClassHistoric = dataset.filter((d) => d.share_class == chosenShareClass )
-
-        dataInSelectedRange.filter((d) => d.share_class == chosenShareClass)
-          .forEach((i) => i.selected = true)
-
-        let dataVisible = dataShareClassHistoric.concat(dataInSelectedRange)
-        drawData(dataVisible)
-
-      })
-
-  //
   // DRAW CHART
   //
 
@@ -110,6 +82,43 @@ function drawChart(dataset) {
       .attr('width', width)
       .attr('height', height)
       .style('fill', 'bisque')
+
+  //
+  // SLIDER
+  //
+
+  const slider = d3.sliderBottom()
+    .max(d3.min(dataset, d => d.period + 1 ))
+    .min(d3.max(dataset, d => d.period - 1 ))
+    .width(sliderWidth)
+    .fill('chocolate')
+    .step(50)
+    .ticks(5)
+    .default([startingSliderValue, d3.min(dataset, d => d.period + 1 )])
+    .on('onchange', function(sliderInput) {
+
+      let sliderValue, _
+      [_, sliderValue] = sliderInput
+
+      dataset
+        .forEach(i => i.selected = false)
+
+      let dataInSelectedRange = retrieveShareClassMostRecent(dataset, sliderValue)
+      let dataShareClassHistoric = dataset.filter(d => d.share_class == chosenShareClass )
+
+      dataInSelectedRange.filter(d => d.share_class == chosenShareClass)
+        .forEach(i => i.selected = true)
+
+      let dataVisible = dataShareClassHistoric.concat(dataInSelectedRange)
+      drawData(dataVisible)
+
+    })
+
+  const sliderElement = svg
+    .append('g')
+      .attr('id', 'slider')
+      .attr('transform', 'translate(' + (totalWidth - sliderWidth - margin.right - 10) + ',' + 10 + ')')
+      .call(slider)
 
   //
   // X AXIS & GRID
