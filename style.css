@@ -22,21 +22,20 @@ input[type=range] {
 }
 
 circle {
+  r: 8;
   fill: grey;
   opacity: 0.4;
-  r: 8;
-}
-
-circle.selected {
-  stroke: chocolate;
+  stroke: midnightblue;
   stroke-width: 2;
 }
 
 circle.trail {
   fill: burlywood;
+  stroke: none;
   opacity: 0.2;
 }
 
-circle.trail.selected {
+circle.selected {
+  stroke: chocolate;
   opacity: 0.8;
 }

@@ -19,11 +19,7 @@ function formatDataset(d) {
 
 function drawChart(dataset) {
 
-  // make a random share class as if selected
   const shareClasses = Array.from(new Set(dataset.map(d => d.share_class )))
-  const randomShareClass = shareClasses[Math.floor(Math.random()*shareClasses.length)]
-  let chosenShareClass = randomShareClass
-  console.log({chosenShareClass})
 
   //
   // CHART CONFIG
@@ -83,6 +79,12 @@ function drawChart(dataset) {
       .attr('height', height)
       .style('fill', 'bisque')
 
+  const titleElement = svg
+    .append('text')
+      .classed('share-class-name', true)
+      .attr('transform', 'translate(' + margin.left + ',' + (margin.top - 20) + ')')
+      .text('')
+
   //
   // SLIDER
   //
@@ -95,7 +97,10 @@ function drawChart(dataset) {
     .step(50)
     .ticks(5)
     .default(startingSliderValue)
-    .on('onchange', function(sliderValue) { updateOnInput(dataset, chosenShareClass, sliderValue) })
+    .on('onchange', function(sliderValue) {
+      chosenShareClass = null
+      updateOnInput(dataset, chosenShareClass, sliderValue)
+    })
 
   const sliderElement = svg
     .append('g')
@@ -133,14 +138,15 @@ function drawChart(dataset) {
   // DRAW DATA
   //
 
+  let chosenShareClass = null
   updateOnInput(dataset, chosenShareClass, startingSliderValue)
 
   function updateOnInput(dataset, chosenShareClass, sliderValue) {
 
     dataset
-      .forEach(i => i.selected = false)
+      .forEach(i => { i.selected = false; i.trail = false })
 
-    // retrieve most recent share class
+    // retrieve most recent from each share class
     function groupby(d) { return d.share_class }
     function extractFirstItem(group) { return group[0] }
 
@@ -149,7 +155,9 @@ function drawChart(dataset) {
       .from(d3.rollup(dataInSelectedRange, extractFirstItem, groupby)
       .values())
 
-    let dataShareClassHistoric = dataset.filter(d => d.share_class == chosenShareClass)
+    let dataShareClassHistoric = (chosenShareClass !== null) ?
+      dataset.filter(d => d.share_class == chosenShareClass)
+      : []
 
     dataInSelectedRange.filter(d => d.share_class == chosenShareClass)
       .forEach(i => i.selected = true)
@@ -157,7 +165,14 @@ function drawChart(dataset) {
     dataShareClassHistoric
       .forEach(i => i.trail = true)
 
-    let dataVisible = new Set(dataShareClassHistoric.concat(dataInSelectedRange))
+    let dataVisible = Array.from(new Set(dataShareClassHistoric.concat(dataInSelectedRange)))
+
+    // pick out the selected circle, so that it can be drawn at the end
+    if (chosenShareClass !== null) {
+      let selectedCircle = Array.from(d3.intersection(dataInSelectedRange, dataShareClassHistoric))[0]
+      dataVisible.push(selectedCircle)
+    }
+
     drawData(dataVisible)
 
   }
@@ -182,6 +197,16 @@ function drawChart(dataset) {
       .attr('filter', d => 'brightness(' + historicness(d.period) + ')')
       .classed('selected', d => d.selected)
       .classed('trail', d => d.trail)
+      .on('click', (event, d) => {
+
+        let sliderValue = slider.value()
+        let chosenShareClass = d.share_class
+
+        updateOnInput(dataset, chosenShareClass, sliderValue)
+
+        d3.select('text.share-class-name').text(chosenShareClass)
+
+      })
       .append('title')
         .text(d => 'share class: ' + d.share_class
                    + '\nperiod: ' + d.period
