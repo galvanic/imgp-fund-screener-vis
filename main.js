@@ -45,12 +45,12 @@ function drawChart(dataset) {
   //
 
   var x = d3.scaleLinear()
-    .domain(d3.extent(dataset, function(d) { return d.volatility }))
+    .domain(d3.extent(dataset, (d) => d.volatility ))
     .range([0, width])
     .nice()
 
   var y = d3.scaleLinear()
-    .domain(d3.extent(dataset, function(d) { return d.performance }))
+    .domain(d3.extent(dataset, (d) => d.performance ))
     .range([height, 0])
     .nice()
 
@@ -61,8 +61,8 @@ function drawChart(dataset) {
   var slider = d3.select('div#vis')
     .append('input')
       .attr('type', 'range')
-      .attr('min', d3.min(dataset, function(d) { return d.period + 1 }))
-      .attr('max', d3.max(dataset, function(d) { return d.period - 1 }))
+      .attr('min', d3.min(dataset, (d) => d.period + 1 ))
+      .attr('max', d3.max(dataset, (d) => d.period - 1 ))
       .attr('step', 1)
       .attr('value', startingSliderValue)
       .on('input', function() {
@@ -70,13 +70,13 @@ function drawChart(dataset) {
         var sliderValue = this.value
 
         dataset
-          .forEach(function(i) { i.selected = false })
+          .forEach((i) => i.selected = false)
 
         var dataInSelectedRange = retrieveShareClassMostRecent(dataset, sliderValue)
-        var dataShareClassHistoric = dataset.filter(function(d) { return d.share_class == chosenShareClass })
+        var dataShareClassHistoric = dataset.filter((d) => d.share_class == chosenShareClass )
 
-        dataInSelectedRange.filter(function(d) { return d.share_class == chosenShareClass })
-          .forEach(function(i) { i.selected = true })
+        dataInSelectedRange.filter((d) => d.share_class == chosenShareClass)
+          .forEach((i) => i.selected = true)
 
         var dataVisible = dataShareClassHistoric.concat(dataInSelectedRange)
         drawData(dataVisible)
@@ -136,13 +136,13 @@ function drawChart(dataset) {
   //
 
   var dataInSelectedRange = retrieveShareClassMostRecent(dataset, startingSliderValue)
-  var dataShareClassHistoric = dataset.filter(function(d) { return d.share_class == chosenShareClass })
+  var dataShareClassHistoric = dataset.filter((d) => d.share_class == chosenShareClass)
 
-  dataInSelectedRange.filter(function(d) { return d.share_class == chosenShareClass })
-    .forEach(function(i) { i.selected = true })
+  dataInSelectedRange.filter((d) => d.share_class == chosenShareClass)
+    .forEach((i) => i.selected = true)
 
   dataShareClassHistoric
-    .forEach(function(i) { i.trail = true })
+    .forEach((i) => i.trail = true)
 
   var dataVisible = new Set(dataShareClassHistoric.concat(dataInSelectedRange))
   drawData(dataVisible)
@@ -153,40 +153,43 @@ function drawChart(dataset) {
     var circles = innerChart.selectAll('circle')
       .data(dataset)
 
-    // TODO DRY
     circles.enter()
       .append('circle')
-        .attr('cx', function(d) { return x(d.volatility) })
-        .attr('cy', function(d) { return y(d.performance) })
-        .classed('selected', function(d) { return d.selected })
-        .classed('trail', function(d) { return d.trail })
-        .attr('data', function (d) { return 'period: ' + d.period + ', perf: ' + d.performance + ', vol: ' + d.volatility })
-        .append('title')
-          .text(function (d) { return 'share class: ' + d.share_class + '\nperiod: ' + d.period + '\nperf: ' + d.performance + '\nvol: ' + d.volatility })
+        .call(drawCircles)
 
     circles
-      .attr('cx', function(d) { return x(d.volatility) })
-      .attr('cy', function(d) { return y(d.performance) })
-      .classed('selected', function(d) { return d.selected })
-      .classed('trail', function(d) { return d.trail })
-      .attr('data', function (d) { return 'period: ' + d.period + ', perf: ' + d.performance + ', vol: ' + d.volatility })
-      .append('title')
-        .text(function (d) { return 'share class: ' + d.share_class + '\nperiod: ' + d.period + '\nperf: ' + d.performance + '\nvol: ' + d.volatility })
+      .call(drawCircles)
 
     circles.exit()
       .remove()
 
   }
 
+  function drawCircles(circles) {
+
+    circles
+      .attr('cx', (d) => x(d.volatility))
+      .attr('cy', (d) => y(d.performance))
+      .classed('selected', (d) => d.selected)
+      .classed('trail', (d) => d.trail)
+      .append('title')
+        .text((d) => 'share class: ' + d.share_class
+                   + '\nperiod: ' + d.period
+                   + '\nperf: ' + d.performance
+                   + '\nvol: ' + d.volatility)
+
+  }
+
 }
+
 
 function retrieveShareClassMostRecent(dataset, sliderValue) {
 
   function groupby(d) { return d.share_class }
-  function extractFirst(group) { return group[0] }
+  function extractFirstItem(group) { return group[0] }
 
-  var dataInSelectedRange = dataset.filter(function(d) { return d.period < sliderValue })
-  var data = Array.from(d3.rollup(dataInSelectedRange, extractFirst, groupby).values())
+  var dataInSelectedRange = dataset.filter((d) => d.period < sliderValue)
+  var data = Array.from(d3.rollup(dataInSelectedRange, extractFirstItem, groupby).values())
 
   return data
 
