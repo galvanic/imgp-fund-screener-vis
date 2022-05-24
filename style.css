@@ -22,7 +22,7 @@ input[type=range] {
 }
 
 circle {
-  r: 8;
+  r: 6;
   fill: grey;
   opacity: 0.4;
   stroke: midnightblue;

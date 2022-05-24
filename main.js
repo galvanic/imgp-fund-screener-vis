@@ -25,7 +25,7 @@ function drawChart(dataset) {
   // CHART CONFIG
   //
 
-  const sliderWidth = 300
+  const sliderWidth = 500
   const startingSliderValue = d3.max(dataset, d => d.period )
 
   const totalWidth = 1200
