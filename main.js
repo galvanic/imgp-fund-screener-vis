@@ -207,13 +207,37 @@ function drawChart(dataset) {
         d3.select('text.share-class-name').text(chosenShareClass)
 
       })
-      .append('title')
-        .text(d => 'share class: ' + d.share_class
-                   + '\nperiod: ' + d.period
-                   + '\nperf: ' + d.performance
-                   + '\nvol: ' + d.volatility)
+
+    circles
+    //.append('title')
+    //  .text(d => 'share class: ' + d.share_class
+    //             + '\nperiod: ' + d.period
+    //             + '\nperf: ' + d.performance
+    //             + '\nvol: ' + d.volatility)
 
   }
 
-}
+  svg
+    .transition()
+      .delay(100)
+      .duration(40000)
+      .tween('period', function(){
 
+        let a, b
+        [a, b] = slider.domain()
+        const i = d3.interpolateNumber(a, b)
+
+        return function(t) {
+
+          let chosenShareClass = null
+          let simulatedSliderValue = i(t)
+
+          //slider.value(simulatedSliderValue)
+          updateOnInput(dataset, chosenShareClass, simulatedSliderValue)
+
+        }
+
+      })
+      .ease(d3.easeLinear)
+
+}
