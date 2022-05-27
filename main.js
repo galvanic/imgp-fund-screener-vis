@@ -73,16 +73,15 @@ function drawChart(dataset) {
       .attr('width', width)
       .attr('height', height)
 
-  const chartBackground = innerChart
+  innerChart // chart background
     .append('rect')
       .attr('width', width)
       .attr('height', height)
-      .style('fill', 'bisque')
 
-  const titleElement = svg
+  svg // share class title
     .append('text')
       .classed('share-class-name', true)
-      .attr('transform', 'translate(' + margin.left + ',' + (margin.top - 20) + ')')
+      .attr('transform', 'translate(' + margin.left + ',' + (margin.top - 35) + ')')
       .text('')
 
   //
@@ -90,7 +89,7 @@ function drawChart(dataset) {
   //
 
   const slider = d3.sliderBottom()
-    .max(d3.min(dataset, d => d.period + 1 ))
+    .max(0)
     .min(d3.max(dataset, d => d.period - 1 ))
     .width(sliderWidth)
     .fill('chocolate')
@@ -102,7 +101,7 @@ function drawChart(dataset) {
       updateOnInput(dataset, chosenShareClass, sliderValue)
     })
 
-  const sliderElement = svg
+  svg // slider element
     .append('g')
       .attr('id', 'slider')
       .attr('transform', 'translate(' + (totalWidth - sliderWidth - margin.right - 10) + ',' + 10 + ')')
@@ -117,9 +116,14 @@ function drawChart(dataset) {
     .ticks(6, ',.1')
 
   svg.append('g')
-    .classed('xaxis', true)
+    .classed('axis', true)
+    .classed('x', true)
     .attr('transform', 'translate(' + margin.left + ',' + (margin.top + height + bufferChartAxisBottom) + ')')
     .call(xAxis)
+    .append('text')
+      .classed('axis-label', true)
+      .attr('transform', 'translate(' + (4+24) + ',' + (-14) + ')')
+      .text('volatility >')
 
   //
   // Y AXIS & GRID
@@ -130,9 +134,14 @@ function drawChart(dataset) {
     .ticks(6, ',.1')
 
   svg.append('g')
-    .classed('yaxis', true)
+    .classed('axis', true)
+    .classed('y', true)
     .attr('transform', 'translate(' + (margin.left - bufferChartAxisLeft) + ',' + margin.top + ')')
     .call(yAxis)
+    .append('text')
+      .classed('axis-label', true)
+      .attr('transform', 'rotate(-90) translate(' + (-height+4+24) + ',' + (24+1) + ')')
+      .text('performance >')
 
   //
   // DRAW DATA
@@ -141,15 +150,16 @@ function drawChart(dataset) {
   let chosenShareClass = null
   updateOnInput(dataset, chosenShareClass, startingSliderValue)
 
+  // helper functions
+  function groupby(d) { return d.share_class }
+  function extractFirstItem(group) { return group[0] }
+
   function updateOnInput(dataset, chosenShareClass, sliderValue) {
 
     dataset
-      .forEach(i => { i.selected = false; i.trail = false })
+      .forEach(i => { i.selected = false; i.trail = false; i.background = false })
 
     // retrieve most recent from each share class
-    function groupby(d) { return d.share_class }
-    function extractFirstItem(group) { return group[0] }
-
     var dataInSelectedRange = dataset.filter(d => d.period < sliderValue)
     dataInSelectedRange = Array
       .from(d3.rollup(dataInSelectedRange, extractFirstItem, groupby)
@@ -159,8 +169,15 @@ function drawChart(dataset) {
       dataset.filter(d => d.share_class == chosenShareClass)
       : []
 
-    dataInSelectedRange.filter(d => d.share_class == chosenShareClass)
-      .forEach(i => i.selected = true)
+    if (chosenShareClass !== null) {
+
+      dataInSelectedRange.filter(d => d.share_class == chosenShareClass)
+        .forEach(i => i.selected = true)
+
+      dataInSelectedRange.filter(d => d.share_class !== chosenShareClass)
+        .forEach(i => i.background = true)
+
+    }
 
     dataShareClassHistoric
       .forEach(i => i.trail = true)
@@ -180,64 +197,64 @@ function drawChart(dataset) {
   function drawData(dataset) {
 
     let circles = innerChart.selectAll('circle')
-      .data(dataset)
+      .data(dataset, d => d.share_class)
       .join(selectionEnter, selectionUpdate, selectionExit)
 
-    function selectionEnter(selection) { selection.append('circle').call(drawCircles) }
-    function selectionUpdate(selection) { selection.call(drawCircles) }
-    function selectionExit(selection) { selection.remove() }
+  }
+
+  function selectionEnter(selection) {
+
+    selection
+      .append('circle')
+        .call(drawCircles)
+        .on('click', (event, d) => {
+
+          let chosenShareClass = d.share_class
+          updateOnInput(dataset, chosenShareClass, slider.value())
+
+          d3.select('text.share-class-name').text(chosenShareClass)
+
+        })
+        .append('title')
+          .text(d => 'share class: ' + d.share_class
+                     + '\nperiod: ' + d.period
+                     + '\nperf: ' + d.performance
+                     + '\nvol: ' + d.volatility)
 
   }
+
+  function selectionUpdate(selection) { selection.call(drawCircles) }
+  function selectionExit(selection) { selection.remove() }
 
   function drawCircles(circles) {
 
     circles
       .attr('cx', d => x(d.volatility))
       .attr('cy', d => y(d.performance))
-      .attr('filter', d => 'brightness(' + historicness(d.period) + ')')
+      .classed('background', d => d.background)
       .classed('selected', d => d.selected)
       .classed('trail', d => d.trail)
-      .on('click', (event, d) => {
-
-        let sliderValue = slider.value()
-        let chosenShareClass = d.share_class
-
-        updateOnInput(dataset, chosenShareClass, sliderValue)
-
-        d3.select('text.share-class-name').text(chosenShareClass)
-
-      })
-
-    circles
-    //.append('title')
-    //  .text(d => 'share class: ' + d.share_class
-    //             + '\nperiod: ' + d.period
-    //             + '\nperf: ' + d.performance
-    //             + '\nvol: ' + d.volatility)
 
   }
 
   svg
     .transition()
       .delay(100)
-      .duration(40000)
+      .duration(2000)
+      .ease(d3.easeLinear)
       .tween('period', function(){
 
         let a, b
         [a, b] = slider.domain()
-        const i = d3.interpolateNumber(a, b)
+        const i = d3.interpolateRound(a, b)
 
         return function(t) {
 
-          let chosenShareClass = null
           let simulatedSliderValue = i(t)
-
-          //slider.value(simulatedSliderValue)
-          updateOnInput(dataset, chosenShareClass, simulatedSliderValue)
+          slider.value(simulatedSliderValue)
 
         }
 
       })
-      .ease(d3.easeLinear)
 
 }

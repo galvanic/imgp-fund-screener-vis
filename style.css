@@ -1,41 +1,75 @@
 svg {
   margin-left: 40px;
-}
+  }
+
+svg g.chart rect {
+  fill: #f0f0f0;
+  }
+
+svg text.share-class-name {
+  font-family: Chronicle Display,Scala Sans Pro,sans-serif;
+  font-size: 16pt;
+  }
+
+svg g.axis text.axis-label {
+  font-family: Scala Sans Pro,sans-serif;
+  font-size: 14px;
+  font-weight: bold;
+  text-transform: uppercase;
+  fill: #006072;
+  }
+
+svg g.axis text.axis-label::after {
+  content: ' >';
+  }
+
+svg g.x.axis text.axis-label {
+  text-anchor: start;
+  }
+
+svg g.y.axis text.axis-label {
+  /* transform: rotate(-90deg); */
+  text-anchor: start;
+  font-size: 15px;
+  }
+
+svg #slider line {
+  stroke-linecap: butt;
+  }
+
+svg #slider line.track-fill, svg #slider line.track-inset {
+  stroke-width: 9px;
+  }
 
 svg #slider line.track-fill {
-  stroke: lightgrey;
-}
+  stroke: #f0f0f0;
+  }
 
 svg #slider line.track-inset {
-  stroke: chocolate;
-}
-
-svg #slider line.track {
-  stroke: chocolate;
-}
-
-input[type=range] {
-  width: 300px;
-  direction: rtl;
-  margin-left: 930px;
-  margin-top: 10px;
-}
+  stroke: #ffb600;
+  }
 
 circle {
-  r: 6;
-  fill: grey;
-  opacity: 0.4;
-  stroke: midnightblue;
-  stroke-width: 2;
-}
+  r: 8px;
+  opacity: 100%;
+  fill: #003b4a;
+  stroke: #002d39;
+  stroke-width: 3px;
+  }
 
 circle.trail {
-  fill: burlywood;
+  fill: #356872;
   stroke: none;
-  opacity: 0.2;
-}
+  opacity: 10%;
+  }
 
 circle.selected {
-  stroke: chocolate;
-  opacity: 0.8;
-}
+  stroke: #002d39;
+  fill: #003b4a;
+  opacity: 100%;
+  }
+
+circle.background {
+  fill: #e0e0e0;
+  stroke: #e0e0e0;
+  }
