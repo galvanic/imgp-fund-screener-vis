@@ -1,5 +1,10 @@
-svg {
-  margin-left: 40px;
+body {
+  padding-left: 40px;
+  }
+
+h1 {
+  margin-left: 50px;
+  font-family: Chronicle Display,Scala Sans Pro,sans-serif;
   }
 
 svg g.chart rect {
