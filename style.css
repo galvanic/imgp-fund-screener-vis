@@ -50,7 +50,6 @@ svg #slider line.track-inset {
   }
 
 circle {
-  r: 8px;
   opacity: 100%;
   fill: #003b4a;
   stroke: #002d39;

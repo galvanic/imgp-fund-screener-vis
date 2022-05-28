@@ -40,6 +40,9 @@ function drawChart(dataset) {
   const width = totalWidth - margin.left - margin.right
   const height = totalHeight - margin.top - margin.bottom
 
+  const circleRestingRadius = 2
+  const circleSelectedRadius = 8
+
   //
   // SCALES
   //
@@ -209,13 +212,35 @@ function drawChart(dataset) {
 
     selection
       .append('circle')
+        .attr('r', circleRestingRadius)
         .call(drawCircles)
         .on('click', (event, d) => {
+
+          d3.select(event.target)
+            .attr('r', circleSelectedRadius)
 
           let chosenShareClass = d.share_class
           updateOnInput(dataset, chosenShareClass, slider.value())
 
           d3.select('text.share-class-name').text(chosenShareClass)
+
+        })
+        .on('mouseover', (event, d) => {
+
+          d3.select(event.target)
+            .transition()
+              .attr('r', circleSelectedRadius)
+
+          d3.select('text.share-class-name').text(d.share_class)
+
+        })
+        .on('mouseout', (event, d) => {
+
+          d3.select(event.target)
+            .transition()
+              .attr('r', circleRestingRadius)
+
+          d3.select('text.share-class-name').text('')
 
         })
         .append('title')
