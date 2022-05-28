@@ -7,12 +7,14 @@ d3.csv(dataFilepath, formatDataset)
 
 function formatDataset(d) {
 
+  const parseTime = d3.timeParse('%Y-%m-%d')
+
   return {
     share_class: d.share_class
   , performance: parseFloat(d.performance)
   , volatility: parseFloat(d.volatility)
   , period: parseInt(d.duration)
-  , selected: false
+  , periodStart: parseTime(d.start_date)
   }
 
 }
@@ -25,8 +27,8 @@ function drawChart(dataset) {
   // CHART CONFIG
   //
 
-  const sliderWidth = 500
-  const startingSliderValue = d3.max(dataset, d => d.period )
+  const sliderWidth = 600
+  const startingSliderValue = d3.min(dataset, d => d.periodStart )
 
   const totalWidth = 1200
   const totalHeight = 800
@@ -89,12 +91,13 @@ function drawChart(dataset) {
   //
 
   const slider = d3.sliderBottom()
-    .max(0)
-    .min(d3.max(dataset, d => d.period - 1 ))
+    .max(new Date)
+    .min(d3.min(dataset, d => d.periodStart ))
     .width(sliderWidth)
     .fill('chocolate')
     .step(50)
     .ticks(5)
+    .tickFormat(d3.timeFormat('%Y'))
     .default(startingSliderValue)
     .on('onchange', function(sliderValue) {
       chosenShareClass = null
@@ -160,7 +163,7 @@ function drawChart(dataset) {
       .forEach(i => { i.selected = false; i.trail = false; i.background = false })
 
     // retrieve most recent from each share class
-    var dataInSelectedRange = dataset.filter(d => d.period < sliderValue)
+    var dataInSelectedRange = dataset.filter(d => d.periodStart > sliderValue)
     dataInSelectedRange = Array
       .from(d3.rollup(dataInSelectedRange, extractFirstItem, groupby)
       .values())
@@ -217,6 +220,7 @@ function drawChart(dataset) {
         })
         .append('title')
           .text(d => 'share class: ' + d.share_class
+                     + '\nstart date: ' + d.periodStart
                      + '\nperiod: ' + d.period
                      + '\nperf: ' + d.performance
                      + '\nvol: ' + d.volatility)
@@ -242,7 +246,7 @@ function drawChart(dataset) {
       .delay(100)
       .duration(2000)
       .ease(d3.easeLinear)
-      .tween('period', function(){
+      .tween('start_date', function(){
 
         let a, b
         [a, b] = slider.domain()
