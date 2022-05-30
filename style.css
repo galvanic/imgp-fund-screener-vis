@@ -62,6 +62,12 @@ svg #slider line.track-inset {
   stroke: #ffb600;
   }
 
+svg g.chart g.focus line {
+  stroke: #002d39;
+  stroke-dasharray: 4, 4;
+  opacity: 0.2;
+  }
+
 circle {
   opacity: 100%;
   fill: #003b4a;

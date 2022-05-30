@@ -114,6 +114,23 @@ function drawChart(dataset) {
     .call(yGrid)
 
   //
+  // TOOLTIP LINE
+  //
+
+  var focus = innerChart.append('g')
+    .classed('focus', true)
+    .style('display', 'none')
+
+  focus.append('line')
+    .classed('vertical', true)
+    .attr('y1', 0)
+    .attr('y2', height)
+
+  focus.append('line')
+    .classed('horizontal', true)
+    .attr('x1', 0)
+    .attr('x2', width)
+  //
   // SLIDER
   //
 
@@ -256,6 +273,18 @@ function drawChart(dataset) {
 
           d3.select('text.share-class-name').text(d.share_class)
 
+          let xPos = x(d.volatility)
+          let yPos = y(d.performance)
+
+          d3.select('g.focus')
+            .style('display', null)
+
+          d3.select('line.vertical')
+            .attr('transform', 'translate(' + xPos + ',' + 0 + ')')
+
+          d3.select('g.focus line.horizontal')
+            .attr('transform', 'translate(' + 0 + ',' + yPos + ')')
+
         })
         .on('mouseout', (event, d) => {
 
@@ -265,13 +294,16 @@ function drawChart(dataset) {
 
           d3.select('text.share-class-name').text('')
 
+          d3.select('g.focus')
+            .style('display', 'none')
+
         })
         .append('title')
           .text(d => 'share class: ' + d.share_class
-                     + '\nstart date: ' + d.periodStart
-                     + '\nperiod: ' + d.period
-                     + '\nperf: ' + d.performance
-                     + '\nvol: ' + d.volatility)
+                     + '\nstart date: ' + d3.timeFormat('%Y %b %d')(d.periodStart)
+                     + '\nperf: ' + d.performance.toFixed(3)
+                     + '\nvol: ' + d.volatility.toFixed(3)
+                )
 
   }
 
