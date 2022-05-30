@@ -10,18 +10,21 @@ function formatDataset(d) {
   const parseTime = d3.timeParse('%Y-%m-%d')
 
   return {
-    share_class: d.share_class
+    shareClass: d.share_class
   , performance: parseFloat(d.performance)
   , volatility: parseFloat(d.volatility)
   , period: parseInt(d.duration)
   , periodStart: parseTime(d.start_date)
+  , assetType: d.asset_type
   }
 
 }
 
 function drawChart(dataset) {
 
-  const shareClasses = Array.from(new Set(dataset.map(d => d.share_class )))
+  const shareClasses = Array.from(new Set(dataset.map(d => d.shareClass )))
+
+  let assetTypes = new Set(dataset.map(d => d.assetType))
 
   //
   // CHART CONFIG
@@ -190,6 +193,41 @@ function drawChart(dataset) {
       .text('performance >')
 
   //
+  // FILTERING INPUT
+  //
+
+  const AssetTypeList = d3.select('div#vis')
+    .append('ul')
+
+  assetTypes.forEach(function(i) {
+    AssetTypeList
+      .append('li')
+        .append('label')
+          .text(i)
+          .append('input')
+            .attr('type', 'checkbox')
+            .attr('name', i)
+  })
+
+  d3.selectAll('input[type=checkbox]')
+    .on('change', function(event) {
+
+      var chosenAssetTypes = []
+
+      d3.selectAll('input[type=checkbox]').each(function(i) {
+        if (this.checked) { chosenAssetTypes.push(this.name) }
+      })
+
+      if (chosenAssetTypes.length > 0) {
+        let filteredDataset = dataset.filter(d => chosenAssetTypes.includes(d.assetType))
+        updateOnInput(filteredDataset, null, slider.value())
+      } else {
+        updateOnInput(dataset, null, slider.value())
+      }
+
+    })
+
+  //
   // DRAW DATA
   //
 
@@ -197,7 +235,7 @@ function drawChart(dataset) {
   updateOnInput(dataset, chosenShareClass, startingSliderValue)
 
   // helper functions
-  function groupby(d) { return d.share_class }
+  function groupby(d) { return d.shareClass }
   function extractFirstItem(group) { return group[0] }
 
   function updateOnInput(dataset, chosenShareClass, sliderValue) {
@@ -212,15 +250,15 @@ function drawChart(dataset) {
       .values())
 
     let dataShareClassHistoric = (chosenShareClass !== null) ?
-      dataset.filter(d => d.share_class == chosenShareClass)
+      dataset.filter(d => d.shareClass == chosenShareClass)
       : []
 
     if (chosenShareClass !== null) {
 
-      dataInSelectedRange.filter(d => d.share_class == chosenShareClass)
+      dataInSelectedRange.filter(d => d.shareClass == chosenShareClass)
         .forEach(i => i.selected = true)
 
-      dataInSelectedRange.filter(d => d.share_class !== chosenShareClass)
+      dataInSelectedRange.filter(d => d.shareClass !== chosenShareClass)
         .forEach(i => i.background = true)
 
     }
@@ -243,7 +281,7 @@ function drawChart(dataset) {
   function drawData(dataset) {
 
     let circles = innerChart.selectAll('circle')
-      .data(dataset, d => d.share_class)
+      .data(dataset, d => d.shareClass)
       .join(selectionEnter, selectionUpdate, selectionExit)
 
   }
@@ -259,7 +297,7 @@ function drawChart(dataset) {
           d3.select(event.target)
             .attr('r', circleSelectedRadius)
 
-          let chosenShareClass = d.share_class
+          let chosenShareClass = d.shareClass
           updateOnInput(dataset, chosenShareClass, slider.value())
 
           d3.select('text.share-class-name').text(chosenShareClass)
@@ -271,7 +309,7 @@ function drawChart(dataset) {
             .transition()
               .attr('r', circleSelectedRadius)
 
-          d3.select('text.share-class-name').text(d.share_class)
+          d3.select('text.share-class-name').text(d.shareClass)
 
           let xPos = x(d.volatility)
           let yPos = y(d.performance)
@@ -299,10 +337,11 @@ function drawChart(dataset) {
 
         })
         .append('title')
-          .text(d => 'share class: ' + d.share_class
+          .text(d => 'share class: ' + d.shareClass
                      + '\nstart date: ' + d3.timeFormat('%Y %b %d')(d.periodStart)
                      + '\nperf: ' + d.performance.toFixed(3)
                      + '\nvol: ' + d.volatility.toFixed(3)
+                     + '\nasset type: ' + d.assetType
                 )
 
   }
