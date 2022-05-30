@@ -38,6 +38,14 @@ svg g.y.axis text.axis-label {
   font-size: 15px;
   }
 
+svg g.chart g.grid g.tick line {
+  stroke: #f8f8f8;
+  }
+
+svg g.chart g.grid path { /* line on the left */
+  visibility: hidden;
+  }
+
 svg #slider line {
   stroke-linecap: butt;
   }

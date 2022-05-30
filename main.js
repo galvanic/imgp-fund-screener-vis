@@ -90,6 +90,30 @@ function drawChart(dataset) {
       .text('')
 
   //
+  // GRID
+  //
+
+  const xGrid = d3.axisBottom()
+    .scale(x)
+    .tickSize(-height)
+    .tickFormat('')
+
+  innerChart.append('g')
+    .classed('grid', true)
+    .attr('transform', 'translate(' + 0 + ',' + height + ')')
+    .call(xGrid)
+
+  const yGrid = d3.axisLeft()
+    .scale(y)
+    .tickSize(-width)
+    .tickFormat('')
+
+  innerChart.append('g')
+    .classed('grid', true)
+    .attr('transform', 'translate(' + 0 + ',' + 0 + ')')
+    .call(yGrid)
+
+  //
   // SLIDER
   //
 
