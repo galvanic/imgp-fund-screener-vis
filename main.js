@@ -27,7 +27,7 @@ function drawChart(dataset) {
   // CHART CONFIG
   //
 
-  const sliderWidth = 600
+  const sliderWidth = 500
   const startingSliderValue = d3.min(dataset, d => d.periodStart )
 
   const totalWidth = 1200
@@ -97,9 +97,8 @@ function drawChart(dataset) {
     .max(new Date)
     .min(d3.min(dataset, d => d.periodStart ))
     .width(sliderWidth)
-    .fill('chocolate')
-    .step(50)
-    .ticks(5)
+    .fill('none')
+    .ticks(8)
     .tickFormat(d3.timeFormat('%Y'))
     .default(startingSliderValue)
     .on('onchange', function(sliderValue) {

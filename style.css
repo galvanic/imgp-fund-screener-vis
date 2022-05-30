@@ -7,7 +7,7 @@ h1 {
   font-family: Chronicle Display,Scala Sans Pro,sans-serif;
   }
 
-svg g.chart rect {
+svg g.chart rect, circle.background {
   fill: #f0f0f0;
   }
 
@@ -58,7 +58,7 @@ circle {
   opacity: 100%;
   fill: #003b4a;
   stroke: #002d39;
-  stroke-width: 3px;
+  stroke-width: 1px;
   }
 
 circle.trail {
@@ -68,12 +68,11 @@ circle.trail {
   }
 
 circle.selected {
-  stroke: #002d39;
+  stroke: #e0e0e0;
   fill: #003b4a;
   opacity: 100%;
   }
 
 circle.background {
-  fill: #e0e0e0;
   stroke: #e0e0e0;
   }
