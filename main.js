@@ -172,7 +172,7 @@ function drawChart(dataset) {
     .append('text')
       .classed('axis-label', true)
       .attr('transform', 'translate(' + (4+24) + ',' + (-14) + ')')
-      .text('volatility >')
+      .text('volatility →')
 
   //
   // Y AXIS & GRID
@@ -190,7 +190,7 @@ function drawChart(dataset) {
     .append('text')
       .classed('axis-label', true)
       .attr('transform', 'rotate(-90) translate(' + (-height+4+24) + ',' + (24+1) + ')')
-      .text('performance >')
+      .text('performance →')
 
   //
   // FILTERING INPUT

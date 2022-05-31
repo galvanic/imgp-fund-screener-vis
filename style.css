@@ -16,16 +16,23 @@ svg text.share-class-name {
   font-size: 16pt;
   }
 
+svg g.axis line {
+  stroke: black;
+  }
+
+svg g.axis text {
+  fill: black;
+  }
+
 svg g.axis text.axis-label {
-  font-family: Scala Sans Pro,sans-serif;
+  font-family: Georgia;
   font-size: 14px;
-  font-weight: bold;
   text-transform: uppercase;
-  fill: #006072;
+  fill: #143b4a;
   }
 
 svg g.axis text.axis-label::after {
-  content: ' >';
+  content: ' →';
   }
 
 svg g.x.axis text.axis-label {
