@@ -75,6 +75,31 @@ svg g.chart g.focus line {
   opacity: 0.2;
   }
 
+div#vis ul li {
+  display: inline;
+  padding: 0;
+  margin: 0;
+  }
+
+div#vis ul li label {
+  border: 1px black solid;
+  margin: 5px;
+  padding: 5px 10px;
+  text-transform: uppercase;
+  font-family: FF Scala Sans Pro,Trebuchet MS;
+  font-size: 12px;
+  background-color: #143b4a;
+  color: #f0f0f0;
+  border-color: #f0f0f0;
+  }
+
+div#vis ul li input[type=checkbox] {
+  position: relative;
+  top: 2px;
+  padding: 0;
+  margin: 0 0 0 9px;
+  }
+
 circle {
   opacity: 100%;
   fill: #003b4a;

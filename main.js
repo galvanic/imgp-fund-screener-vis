@@ -307,6 +307,7 @@ function drawChart(dataset) {
 
           d3.select(event.target)
             .transition()
+              .duration(100)
               .attr('r', circleSelectedRadius)
 
           d3.select('text.share-class-name').text(d.shareClass)
@@ -328,6 +329,7 @@ function drawChart(dataset) {
 
           d3.select(event.target)
             .transition()
+              .duration(250)
               .attr('r', circleRestingRadius)
 
           d3.select('text.share-class-name').text('')
