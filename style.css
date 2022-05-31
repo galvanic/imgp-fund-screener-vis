@@ -103,7 +103,7 @@ div#vis ul li input[type=checkbox] {
 circle {
   opacity: 100%;
   fill: #003b4a;
-  stroke: #002d39;
+  stroke: #f0f0f0;
   stroke-width: 1px;
   }
 

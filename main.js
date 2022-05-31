@@ -43,8 +43,8 @@ function drawChart(dataset) {
   const width = totalWidth - margin.left - margin.right
   const height = totalHeight - margin.top - margin.bottom
 
-  const circleRestingRadius = 2
-  const circleSelectedRadius = 8
+  const circleRestingRadius = 3
+  const circleSelectedRadius = 7
 
   //
   // SCALES
