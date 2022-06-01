@@ -155,6 +155,12 @@ function drawChart(dataset) {
       .attr('id', 'slider')
       .attr('transform', 'translate(' + (totalWidth - sliderWidth - margin.right - 10) + ',' + 10 + ')')
       .call(slider)
+    .on('mouseover', function() {
+
+      // stop animation
+      svg.transition().duration(0)
+
+    })
 
   //
   // X AXIS & GRID
@@ -234,6 +240,8 @@ function drawChart(dataset) {
   let chosenShareClass = null
   updateOnInput(dataset, chosenShareClass, startingSliderValue)
 
+  animateThroughTime()
+
   // helper functions
   function groupby(d) { return d.shareClass }
   function extractFirstItem(group) { return group[0] }
@@ -241,17 +249,13 @@ function drawChart(dataset) {
   function updateOnInput(dataset, chosenShareClass, sliderValue) {
 
     dataset
-      .forEach(i => { i.selected = false; i.trail = false; i.background = false })
+      .forEach(i => { i.selected = false; i.background = false })
 
     // retrieve most recent from each share class
     var dataInSelectedRange = dataset.filter(d => d.periodStart > sliderValue)
     dataInSelectedRange = Array
       .from(d3.rollup(dataInSelectedRange, extractFirstItem, groupby)
       .values())
-
-    let dataShareClassHistoric = (chosenShareClass !== null) ?
-      dataset.filter(d => d.shareClass == chosenShareClass)
-      : []
 
     if (chosenShareClass !== null) {
 
@@ -263,24 +267,13 @@ function drawChart(dataset) {
 
     }
 
-    dataShareClassHistoric
-      .forEach(i => i.trail = true)
-
-    let dataVisible = Array.from(new Set(dataShareClassHistoric.concat(dataInSelectedRange)))
-
-    // pick out the selected circle, so that it can be drawn at the end
-    if (chosenShareClass !== null) {
-      let selectedCircle = Array.from(d3.intersection(dataInSelectedRange, dataShareClassHistoric))[0]
-      dataVisible.push(selectedCircle)
-    }
-
-    drawData(dataVisible)
+    drawData(dataInSelectedRange)
 
   }
 
   function drawData(dataset) {
 
-    let circles = innerChart.selectAll('circle')
+    innerChart.selectAll('circle')
       .data(dataset, d => d.shareClass)
       .join(selectionEnter, selectionUpdate, selectionExit)
 
@@ -288,84 +281,112 @@ function drawChart(dataset) {
 
   function selectionEnter(selection) {
 
-    selection
-      .append('circle')
-        .attr('r', circleRestingRadius)
-        .call(drawCircles)
-        .on('click', (event, d) => {
+    let circles = selection.append('circle')
 
-          d3.select(event.target)
+    circles
+      .attr('r', 0)
+      .classed('selected', d => d.selected)
+      .classed('background', d => d.background)
+      .call(positionCircle)
+      .on('click', (event, d) => {
+
+        d3.select(event.target)
+          .attr('r', circleSelectedRadius)
+
+        let chosenShareClass = d.shareClass
+        updateOnInput(dataset, chosenShareClass, slider.value())
+
+        d3.select('text.share-class-name').text(chosenShareClass)
+
+      })
+      .on('mouseover', (event, d) => {
+
+        d3.select(event.target)
+          .transition()
+            .duration(100)
             .attr('r', circleSelectedRadius)
 
-          let chosenShareClass = d.shareClass
-          updateOnInput(dataset, chosenShareClass, slider.value())
+        d3.select('text.share-class-name').text(d.shareClass)
 
-          d3.select('text.share-class-name').text(chosenShareClass)
+        let xPos = x(d.volatility)
+        let yPos = y(d.performance)
 
-        })
-        .on('mouseover', (event, d) => {
+        d3.select('g.focus')
+          .style('display', null)
 
-          d3.select(event.target)
-            .transition()
-              .duration(100)
-              .attr('r', circleSelectedRadius)
+        d3.select('line.vertical')
+          .attr('transform', 'translate(' + xPos + ',' + 0 + ')')
 
-          d3.select('text.share-class-name').text(d.shareClass)
+        d3.select('g.focus line.horizontal')
+          .attr('transform', 'translate(' + 0 + ',' + yPos + ')')
 
-          let xPos = x(d.volatility)
-          let yPos = y(d.performance)
+      })
+      .on('mouseout', (event, d) => {
 
-          d3.select('g.focus')
-            .style('display', null)
+        d3.select(event.target)
+          .transition()
+            .duration(250)
+            .attr('r', circleRestingRadius)
 
-          d3.select('line.vertical')
-            .attr('transform', 'translate(' + xPos + ',' + 0 + ')')
+        d3.select('text.share-class-name').text('')
 
-          d3.select('g.focus line.horizontal')
-            .attr('transform', 'translate(' + 0 + ',' + yPos + ')')
+        d3.select('g.focus')
+          .style('display', 'none')
 
-        })
-        .on('mouseout', (event, d) => {
+      })
 
-          d3.select(event.target)
-            .transition()
-              .duration(250)
-              .attr('r', circleRestingRadius)
+    circles.append('title')
+      .text(d => 'share class: ' + d.shareClass
+                 + '\nstart date: ' + d3.timeFormat('%Y %b %d')(d.periodStart)
+                 + '\nperf: ' + d.performance.toFixed(3)
+                 + '\nvol: ' + d.volatility.toFixed(3)
+                 + '\nasset type: ' + d.assetType
+            )
 
-          d3.select('text.share-class-name').text('')
-
-          d3.select('g.focus')
-            .style('display', 'none')
-
-        })
-        .append('title')
-          .text(d => 'share class: ' + d.shareClass
-                     + '\nstart date: ' + d3.timeFormat('%Y %b %d')(d.periodStart)
-                     + '\nperf: ' + d.performance.toFixed(3)
-                     + '\nvol: ' + d.volatility.toFixed(3)
-                     + '\nasset type: ' + d.assetType
-                )
+    circles.transition()
+      .duration(150)
+      .attr('r', circleRestingRadius)
 
   }
 
-  function selectionUpdate(selection) { selection.call(drawCircles) }
-  function selectionExit(selection) { selection.remove() }
+  function selectionUpdate(selection) {
 
-  function drawCircles(circles) {
+    selection
+      .attr('r', circleRestingRadius)
+      // ^ needed in case the enter transition didn't finish; otherwise the radius is too small for the circle to be visible
+      .classed('selected', d => d.selected)
+      .classed('background', d => d.background)
+      .transition()
+        .delay(0)
+        .duration(50)
+        .ease(d3.easeLinear)
+        .call(positionCircle)
+
+  }
+
+  function selectionExit(selection) {
+
+    selection
+      .transition()
+        .duration(200)
+        .attr('r', 0)
+      .remove()
+
+  }
+
+  function positionCircle(circles) {
 
     circles
       .attr('cx', d => x(d.volatility))
       .attr('cy', d => y(d.performance))
-      .classed('background', d => d.background)
-      .classed('selected', d => d.selected)
-      .classed('trail', d => d.trail)
 
   }
 
-  svg
-    .transition()
-      .delay(100)
-      .duration(2000)
+  function animateThroughTime() {
+
+    svg.transition()
+      .delay(200)
+      .duration(5000)
       .ease(d3.easeLinear)
       .tween('start_date', function(){
 
@@ -381,5 +402,7 @@ function drawChart(dataset) {
         }
 
       })
+
+  }
 
 }
