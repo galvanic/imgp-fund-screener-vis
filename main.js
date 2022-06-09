@@ -43,7 +43,7 @@ function drawChart(dataset) {
   const width = totalWidth - margin.left - margin.right
   const height = totalHeight - margin.top - margin.bottom
 
-  const circleRestingRadius = 3
+  const circleRestingRadius = 4
   const circleSelectedRadius = 7
 
   //
@@ -391,7 +391,7 @@ function drawChart(dataset) {
 
     svg.transition()
       .delay(200)
-      .duration(5000)
+      .duration(18000)
       .ease(d3.easeLinear)
       .tween('start_date', function(){
 
