@@ -1,9 +1,14 @@
-Fund Screener for Website Homepage Redesign
+Fund Screener
 ===
+
+iMGP fund screener interactive visualisation for website redesign.
 
 Javascript standalone application for data visualisation of funds.
 
-Run locally via:
+Instructions
+---
+
+Set up a server to run the application locally. This is necessary for the data loading.
 
 ```shell
 $ python3 -m http.server 8000
