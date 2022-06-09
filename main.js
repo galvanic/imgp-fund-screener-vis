@@ -212,13 +212,16 @@ function drawChart(dataset) {
       .append('li')
         .append('label')
           .classed(i, true)
-          .text(i)
+          .text(i.replace(/_/g, ' '))
           .append('input')
             .attr('type', 'checkbox')
             .attr('name', i)
   })
 
   d3.selectAll('input[type=checkbox]')
+    .each(function(i) {
+      this.checked = true
+    })
     .on('change', function(event) {
 
       var chosenAssetTypes = []
