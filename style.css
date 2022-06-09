@@ -122,3 +122,9 @@ circle.selected {
 circle.background {
   stroke: #e0e0e0;
   }
+
+div#vis ul li label.bonds, circle.bonds { background-color: #65BAAF; fill: #65BAAF; }
+div#vis ul li label.alternative, circle.alternative { background-color: #71A850; fill: #71A850; }
+div#vis ul li label.multi-assets, circle.multi-assets { background-color: #E43D30; fill: #E43D30; }
+div#vis ul li label.equities, circle.equities { background-color: #B487B8; fill: #B487B8; }
+

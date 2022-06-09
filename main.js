@@ -43,8 +43,8 @@ function drawChart(dataset) {
   const width = totalWidth - margin.left - margin.right
   const height = totalHeight - margin.top - margin.bottom
 
-  const circleRestingRadius = 4
-  const circleSelectedRadius = 7
+  const circleRestingRadius = 5
+  const circleSelectedRadius = 8
 
   //
   // SCALES
@@ -211,6 +211,7 @@ function drawChart(dataset) {
     AssetTypeList
       .append('li')
         .append('label')
+          .classed(i, true)
           .text(i)
           .append('input')
             .attr('type', 'checkbox')
@@ -287,6 +288,7 @@ function drawChart(dataset) {
 
     circles
       .attr('r', 0)
+      .attr('class', d => d.assetType)
       .classed('selected', d => d.selected)
       .classed('background', d => d.background)
       .call(positionCircle)
