@@ -31,7 +31,7 @@ function drawChart(dataset) {
   //
 
   const sliderWidth = 500
-  const startingSliderValue = d3.min(dataset, d => d.periodStart )
+  const sliderValueAtPageLoad = d3.max(dataset, d => d.periodStart )
 
   const totalWidth = 1200
   const totalHeight = 800
@@ -60,11 +60,6 @@ function drawChart(dataset) {
     .range([height, 0])
     .nice()
 
-  const historicness = d3.scaleLinear()
-    .domain(d3.extent(dataset, d => d.period ))
-    .range([1, 0.5])
-    .nice()
-
   //
   // DRAW CHART
   //
@@ -85,8 +80,14 @@ function drawChart(dataset) {
     .append('rect')
       .attr('width', width)
       .attr('height', height)
+    .on('click', (event, d) => {
 
-  svg // share class title
+      let chosenShareClass = null
+      updateOnInput(dataset, chosenShareClass, slider.value())
+
+    })
+
+  svg // shareClass title
     .append('text')
       .classed('share-class-name', true)
       .attr('transform', 'translate(' + margin.left + ',' + (margin.top - 35) + ')')
@@ -138,13 +139,14 @@ function drawChart(dataset) {
   //
 
   const slider = d3.sliderBottom()
-    .max(new Date)
     .min(d3.min(dataset, d => d.periodStart ))
+    .max(d3.max(dataset, d => d.periodStart ) - 1)
     .width(sliderWidth)
     .fill('none')
     .ticks(8)
     .tickFormat(d3.timeFormat('%Y'))
-    .default(startingSliderValue)
+    .displayFormat(d3.timeFormat('%Y %b %d'))
+    .default(sliderValueAtPageLoad)
     .on('onchange', function(sliderValue) {
       chosenShareClass = null
       updateOnInput(dataset, chosenShareClass, sliderValue)
@@ -168,7 +170,7 @@ function drawChart(dataset) {
 
   const xAxis = d3.axisBottom()
     .scale(x)
-    .ticks(6, ',.1')
+    .ticks(6, ',%')
 
   svg.append('g')
     .classed('axis', true)
@@ -186,7 +188,7 @@ function drawChart(dataset) {
 
   const yAxis = d3.axisLeft()
     .scale(y)
-    .ticks(6, ',.1')
+    .ticks(6, '+,%')
 
   svg.append('g')
     .classed('axis', true)
@@ -238,7 +240,7 @@ function drawChart(dataset) {
   //
 
   let chosenShareClass = null
-  updateOnInput(dataset, chosenShareClass, startingSliderValue)
+  updateOnInput(dataset, chosenShareClass, sliderValueAtPageLoad)
 
   animateThroughTime()
 
@@ -336,12 +338,8 @@ function drawChart(dataset) {
       })
 
     circles.append('title')
-      .text(d => 'share class: ' + d.shareClass
-                 + '\nstart date: ' + d3.timeFormat('%Y %b %d')(d.periodStart)
-                 + '\nperf: ' + d.performance.toFixed(3)
-                 + '\nvol: ' + d.volatility.toFixed(3)
-                 + '\nasset type: ' + d.assetType
-            )
+      .classed('tooltip', true)
+      .text(tooltipText)
 
     circles.transition()
       .duration(150)
@@ -361,6 +359,13 @@ function drawChart(dataset) {
         .duration(50)
         .ease(d3.easeLinear)
         .call(positionCircle)
+
+    d3.selectAll('title.tooltip')
+      .remove()
+
+    selection.append('title')
+      .classed('tooltip', true)
+      .text(tooltipText)
 
   }
 
@@ -392,7 +397,7 @@ function drawChart(dataset) {
 
         let a, b
         [a, b] = slider.domain()
-        const i = d3.interpolateRound(a, b)
+        const i = d3.interpolateRound(b, a)
 
         return function(t) {
 
@@ -402,6 +407,18 @@ function drawChart(dataset) {
         }
 
       })
+
+  }
+
+  function tooltipText(d) {
+
+    let text = ''
+             + 'share class: ' + d.shareClass
+             + '\nstart date: ' + d3.timeFormat('%Y %b %d')(d.periodStart)
+             + '\nperf: ' + d.performance.toFixed(3)
+             + '\nvol: ' + d.volatility.toFixed(3)
+             + '\nasset type: ' + d.assetType
+    return text
 
   }
 
