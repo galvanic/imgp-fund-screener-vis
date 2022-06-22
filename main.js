@@ -23,7 +23,6 @@ function formatDataset(d) {
 function drawChart(dataset) {
 
   const shareClasses = Array.from(new Set(dataset.map(d => d.shareClass )))
-
   let assetTypes = new Set(dataset.map(d => d.assetType))
 
   //
@@ -50,12 +49,12 @@ function drawChart(dataset) {
   // SCALES
   //
 
-  const x = d3.scaleLinear()
+  let xScale = d3.scaleLinear()
     .domain(d3.extent(dataset, d => d.volatility ))
     .range([0, width])
     .nice()
 
-  const y = d3.scaleLinear()
+  let yScale = d3.scaleLinear()
     .domain(d3.extent(dataset, d => d.performance ))
     .range([height, 0])
     .nice()
@@ -69,15 +68,25 @@ function drawChart(dataset) {
       .attr('width', totalWidth)
       .attr('height', totalHeight)
 
-  const innerChart = svg
+  svg.append('clipPath')
+    .attr('id', 'clip')
+    .append('rect')
+      .attr('width', width)
+      .attr('height', height)
+      .attr('x', 0)
+      .attr('y', 0)
+
+  let innerChart = svg
     .append('g')
       .classed('chart', true)
       .attr('transform', 'translate(' + margin.left + ',' + margin.top + ')')
       .attr('width', width)
       .attr('height', height)
+      .attr('clip-path', 'url(#clip)')
 
   innerChart // chart background
     .append('rect')
+      .classed('background', true)
       .attr('width', width)
       .attr('height', height)
     .on('click', (event, d) => {
@@ -98,21 +107,23 @@ function drawChart(dataset) {
   //
 
   const xGrid = d3.axisBottom()
-    .scale(x)
+    .scale(xScale)
+    .ticks(6)
     .tickSize(-height)
     .tickFormat('')
 
-  innerChart.append('g')
+  const xGridElement = innerChart.append('g')
     .classed('grid', true)
     .attr('transform', 'translate(' + 0 + ',' + height + ')')
     .call(xGrid)
 
   const yGrid = d3.axisLeft()
-    .scale(y)
+    .scale(yScale)
+    .ticks(6)
     .tickSize(-width)
     .tickFormat('')
 
-  innerChart.append('g')
+  const yGridElement = innerChart.append('g')
     .classed('grid', true)
     .attr('transform', 'translate(' + 0 + ',' + 0 + ')')
     .call(yGrid)
@@ -134,71 +145,44 @@ function drawChart(dataset) {
     .classed('horizontal', true)
     .attr('x1', 0)
     .attr('x2', width)
-  //
-  // SLIDER
-  //
-
-  const slider = d3.sliderBottom()
-    .min(d3.min(dataset, d => d.periodStart ))
-    .max(d3.max(dataset, d => d.periodStart ) - 1)
-    .width(sliderWidth)
-    .fill('none')
-    .ticks(8)
-    .tickFormat(d3.timeFormat('%Y'))
-    .displayFormat(d3.timeFormat('%Y %b %d'))
-    .default(sliderValueAtPageLoad)
-    .on('onchange', function(sliderValue) {
-      chosenShareClass = null
-      updateOnInput(dataset, chosenShareClass, sliderValue)
-    })
-
-  svg // slider element
-    .append('g')
-      .attr('id', 'slider')
-      .attr('transform', 'translate(' + (totalWidth - sliderWidth - margin.right - 10) + ',' + 10 + ')')
-      .call(slider)
-    .on('mouseover', function() {
-
-      // stop animation
-      svg.transition().duration(0)
-
-    })
 
   //
-  // X AXIS & GRID
+  // X AXIS
   //
 
   const xAxis = d3.axisBottom()
-    .scale(x)
+    .scale(xScale)
     .ticks(6, ',%')
 
-  svg.append('g')
+  const xAxisElement = svg.append('g')
     .classed('axis', true)
     .classed('x', true)
     .attr('transform', 'translate(' + margin.left + ',' + (margin.top + height + bufferChartAxisBottom) + ')')
     .call(xAxis)
-    .append('text')
-      .classed('axis-label', true)
-      .attr('transform', 'translate(' + (4+24) + ',' + (-14) + ')')
-      .text('volatility →')
+
+  xAxisElement.append('text')
+    .classed('axis-label', true)
+    .attr('transform', 'translate(' + (4+24) + ',' + (-14) + ')')
+    .text('volatility →')
 
   //
-  // Y AXIS & GRID
+  // Y AXIS
   //
 
   const yAxis = d3.axisLeft()
-    .scale(y)
+    .scale(yScale)
     .ticks(6, '+,%')
 
-  svg.append('g')
+  const yAxisElement = svg.append('g')
     .classed('axis', true)
     .classed('y', true)
     .attr('transform', 'translate(' + (margin.left - bufferChartAxisLeft) + ',' + margin.top + ')')
     .call(yAxis)
-    .append('text')
-      .classed('axis-label', true)
-      .attr('transform', 'rotate(-90) translate(' + (-height+4+24) + ',' + (24+1) + ')')
-      .text('performance →')
+
+  yAxisElement.append('text')
+    .classed('axis-label', true)
+    .attr('transform', 'rotate(-90) translate(' + (-height+4+24) + ',' + (24+1) + ')')
+    .text('performance →')
 
   //
   // FILTERING INPUT
@@ -238,6 +222,95 @@ function drawChart(dataset) {
       }
 
     })
+
+  //
+  // SLIDER
+  //
+
+  const slider = d3.sliderBottom()
+    .min(d3.min(dataset, d => d.periodStart ))
+    .max(d3.max(dataset, d => d.periodStart ) - 1)
+    .width(sliderWidth)
+    .fill('none')
+    .ticks(8)
+    .tickFormat(d3.timeFormat('%Y'))
+    .displayFormat(d3.timeFormat('%Y %b %d'))
+    .default(sliderValueAtPageLoad)
+    .on('onchange', function(sliderValue) {
+      chosenShareClass = null
+      updateOnInput(dataset, chosenShareClass, sliderValue)
+    })
+
+  svg // slider element
+    .append('g')
+      .attr('id', 'slider')
+      .attr('transform', 'translate(' + (totalWidth - sliderWidth - margin.right - 10) + ',' + 10 + ')')
+      .call(slider)
+    .on('mouseover', function() {
+
+      // stop animation
+      svg.transition().duration(0)
+
+      // re-enable zoom
+      innerChart.call(zoom)
+
+    })
+    .append('text')
+      .attr('id', 'play-button')
+      .text('◀')
+
+  //
+  // ZOOM
+  //
+
+  const handleZoom = function(e) {
+
+    // compute the new scale
+    const newXScale = e.transform.rescaleX(xScale)
+    const newYScale = e.transform.rescaleY(yScale)
+
+    // update axes & grid
+    xAxisElement.call(xAxis.scale(newXScale))
+    yAxisElement.call(yAxis.scale(newYScale))
+    xGridElement.call(xGrid.scale(newXScale))
+    yGridElement.call(yGrid.scale(newYScale))
+
+    // update drawn datapoints
+    d3.selectAll('circle')
+      .attr('cx', d => newXScale(d.volatility))
+      .attr('cy', d => newYScale(d.performance))
+      .on('mouseover', (event, d) => {
+
+        d3.select(event.target)
+          .transition()
+            .duration(100)
+            .attr('r', circleSelectedRadius)
+
+        d3.select('text.share-class-name').text(d.shareClass)
+
+        let xPos = newXScale(d.volatility)
+        let yPos = newYScale(d.performance)
+
+        d3.select('g.focus')
+          .style('display', null)
+
+        d3.select('g.focus line.vertical')
+          .attr('transform', 'translate(' + xPos + ',' + 0 + ')')
+
+        d3.select('g.focus line.horizontal')
+          .attr('transform', 'translate(' + 0 + ',' + yPos + ')')
+
+      })
+
+    // TODO create a "reset zoom" button
+
+  }
+
+  const zoom = d3.zoom()
+    .scaleExtent([0.8, 3])
+    //.extent([[0, 0], [width, height]])
+    //.translateExtent([[-100, -100], [width + 90, height + 100]])
+    .on('zoom', handleZoom)
 
   //
   // DRAW DATA
@@ -315,13 +388,13 @@ function drawChart(dataset) {
 
         d3.select('text.share-class-name').text(d.shareClass)
 
-        let xPos = x(d.volatility)
-        let yPos = y(d.performance)
+        let xPos = xScale(d.volatility)
+        let yPos = yScale(d.performance)
 
         d3.select('g.focus')
           .style('display', null)
 
-        d3.select('line.vertical')
+        d3.select('g.focus line.vertical')
           .attr('transform', 'translate(' + xPos + ',' + 0 + ')')
 
         d3.select('g.focus line.horizontal')
@@ -387,12 +460,14 @@ function drawChart(dataset) {
   function positionCircle(circles) {
 
     circles
-      .attr('cx', d => x(d.volatility))
-      .attr('cy', d => y(d.performance))
+      .attr('cx', d => xScale(d.volatility))
+      .attr('cy', d => yScale(d.performance))
 
   }
 
   function animateThroughTime() {
+
+    innerChart.on('.zoom', null)
 
     svg.transition()
       .delay(200)
@@ -411,6 +486,9 @@ function drawChart(dataset) {
 
         }
 
+      })
+      .on('end', function() {
+        innerChart.call(zoom)
       })
 
   }

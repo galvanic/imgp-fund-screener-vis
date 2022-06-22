@@ -7,7 +7,7 @@ h1 {
   font-family: Chronicle Display,Scala Sans Pro,sans-serif;
   }
 
-svg g.chart rect, circle.background {
+svg g.chart rect.background, circle.background {
   fill: #f0f0f0;
   }
 
