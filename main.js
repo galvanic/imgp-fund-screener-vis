@@ -90,7 +90,7 @@ function drawChart(dataset) {
       .attr('height', height)
       .attr('clip-path', 'url(#clip)')
 
-  innerChart // chart background
+  const innerChartBackground = innerChart
     .append('rect')
       .classed('background', true)
       .attr('width', width)
@@ -138,7 +138,7 @@ function drawChart(dataset) {
   // TOOLTIP LINE
   //
 
-  var focus = innerChart.append('g')
+  const focus = innerChart.append('g')
     .classed('focus', true)
     .style('display', 'none')
 
@@ -258,12 +258,12 @@ function drawChart(dataset) {
       svg.transition().duration(0)
 
       // re-enable zoom
-      innerChart.call(zoom)
+      innerChartBackground.call(zoom)
 
     })
     .append('text')
       .attr('id', 'play-button')
-      .attr('transform', 'translate(' + (sliderWidth + spaceForPlayButton - 2) + ',' + 5 + ')')
+      .attr('transform', 'translate(' + (sliderWidth + spaceForPlayButton - 3) + ',' + 5 + ')')
       .text('◀')
       .on('click', function(e) {
         animateThroughTime()
@@ -322,6 +322,8 @@ function drawChart(dataset) {
     //.extent([[0, 0], [width, height]])
     //.translateExtent([[-100, -100], [width + 90, height + 100]])
     .on('zoom', handleZoom)
+
+  innerChartBackground.call(zoom)
 
   //
   // DRAW DATA
@@ -411,13 +413,13 @@ function drawChart(dataset) {
         let xPos = xScale(d.volatility)
         let yPos = yScale(d.performance)
 
-        d3.select('g.focus')
+        focus
           .style('display', null)
 
-        d3.select('g.focus line.vertical')
+        focus.select('line.vertical')
           .attr('transform', 'translate(' + xPos + ',' + 0 + ')')
 
-        d3.select('g.focus line.horizontal')
+        focus.select('line.horizontal')
           .attr('transform', 'translate(' + 0 + ',' + yPos + ')')
 
       })
@@ -487,7 +489,7 @@ function drawChart(dataset) {
 
   function animateThroughTime() {
 
-    innerChart.on('.zoom', null)
+    innerChartBackground.on('.zoom', null)
 
     svg.transition()
       .delay(200)
@@ -508,7 +510,7 @@ function drawChart(dataset) {
 
       })
       .on('end', function() {
-        innerChart.call(zoom)
+        innerChartBackground.call(zoom)
       })
 
   }
@@ -522,6 +524,7 @@ function drawChart(dataset) {
              + '\nperf: ' + d.performance.toFixed(3)
              + '\nvol: ' + d.volatility.toFixed(3)
              + '\nasset type: ' + d.assetType
+             + '\nsource: ' + d.source
     return text
 
   }

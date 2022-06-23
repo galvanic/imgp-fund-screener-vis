@@ -71,6 +71,8 @@ svg #slider line.track-inset {
 svg g#slider text#play-button {
   cursor: pointer;
   fill: #003b4a;
+  stroke: #006072;
+  stroke-width: 2px;
   }
 
 svg g.chart g.focus line {
@@ -144,4 +146,3 @@ circle.peers, circle.benchmark {
 circle.peers.selected, circle.benchmark.selected {
   display: inline;
   }
-
