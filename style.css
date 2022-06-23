@@ -53,11 +53,11 @@ svg g.chart g.grid path { /* line on the left */
   visibility: hidden;
   }
 
-svg #slider line {
+svg g#slider line {
   stroke-linecap: butt;
   }
 
-svg #slider line.track-fill, svg #slider line.track-inset {
+svg g#slider line.track-fill, svg g#slider line.track-inset {
   stroke-width: 9px;
   }
 
@@ -67,6 +67,10 @@ svg #slider line.track-fill {
 
 svg #slider line.track-inset {
   stroke: #ffb600;
+
+svg g#slider text#play-button {
+  cursor: pointer;
+  fill: #003b4a;
   }
 
 svg g.chart g.focus line {

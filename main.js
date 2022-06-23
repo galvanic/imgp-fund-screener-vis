@@ -35,6 +35,7 @@ function drawChart(dataset) {
   //
 
   const sliderWidth = 500
+  const spaceForPlayButton = 30
   const sliderValueAtPageLoad = d3.max(dataset, d => d.periodStart )
 
   const totalWidth = 1200
@@ -249,7 +250,7 @@ function drawChart(dataset) {
   svg // slider element
     .append('g')
       .attr('id', 'slider')
-      .attr('transform', 'translate(' + (totalWidth - sliderWidth - margin.right - 10) + ',' + 10 + ')')
+      .attr('transform', 'translate(' + (totalWidth - sliderWidth - margin.right - 10 - spaceForPlayButton) + ',' + 10 + ')')
       .call(slider)
     .on('mouseover', function() {
 
@@ -262,7 +263,12 @@ function drawChart(dataset) {
     })
     .append('text')
       .attr('id', 'play-button')
+      .attr('transform', 'translate(' + (sliderWidth + spaceForPlayButton - 2) + ',' + 5 + ')')
       .text('◀')
+      .on('click', function(e) {
+        animateThroughTime()
+        // TODO turn it into pause button
+      })
 
   //
   // ZOOM
@@ -324,9 +330,10 @@ function drawChart(dataset) {
   let chosenShareClass = null
   updateOnInput(dataset, chosenShareClass, sliderValueAtPageLoad)
 
-  animateThroughTime()
+  //
+  // HELPER FUNCTIONS
+  //
 
-  // helper functions
   function groupby(d) { return d.shareClass }
   function extractFirstItem(group) { return group[0] }
 
