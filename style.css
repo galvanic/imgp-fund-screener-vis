@@ -122,6 +122,7 @@ circle.selected {
 
 circle.background {
   stroke: #e0e0e0;
+  opacity: 0.2;
   }
 
 div#vis ul li label.bonds, circle.bonds { background-color: #65BAAF; fill: #65BAAF; }
@@ -129,4 +130,14 @@ div#vis ul li label.alternative, circle.alternative { background-color: #71A850;
 div#vis ul li label.mixed, circle.mixed { background-color: #E43D30; fill: #E43D30; }
 div#vis ul li label.equity, circle.equity { background-color: #B487B8; fill: #B487B8; }
 div#vis ul li label.fund_of_funds, circle.fund_of_funds { background-color: #AC3C72; fill: #AC3C72; }
+
+circle.peers, circle.benchmark {
+  fill: #143b4a;
+  stroke: #e0e0e0;
+  display: none;
+  }
+
+circle.peers.selected, circle.benchmark.selected {
+  display: inline;
+  }
 

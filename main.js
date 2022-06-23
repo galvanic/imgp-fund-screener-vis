@@ -16,11 +16,16 @@ function formatDataset(d) {
   , period: parseInt(d.duration)
   , periodStart: parseTime(d.start_date)
   , assetType: d.asset_type
+  , source: d.source
+  , isin: d.isin_code
   }
 
 }
 
 function drawChart(dataset) {
+
+  dataset
+    .forEach(i => { i.peers = i.source == 'peers'; i.benchmark = i.source == 'benchmark' })
 
   const shareClasses = Array.from(new Set(dataset.map(d => d.shareClass )))
   let assetTypes = new Set(dataset.map(d => d.assetType))
@@ -344,6 +349,12 @@ function drawChart(dataset) {
       dataInSelectedRange.filter(d => d.shareClass !== chosenShareClass)
         .forEach(i => i.background = true)
 
+      let chosenISIN = dataset.filter(d => d.shareClass == chosenShareClass)[0].isin
+      dataInSelectedRange.filter(d => d.isin == chosenISIN)
+        .forEach(i => i.selected = true)
+      dataInSelectedRange.filter(d => d.isin == chosenISIN)
+        .forEach(i => i.background = false)
+
     }
 
     drawData(dataInSelectedRange)
@@ -367,6 +378,8 @@ function drawChart(dataset) {
       .attr('class', d => d.assetType)
       .classed('selected', d => d.selected)
       .classed('background', d => d.background)
+      .classed('peers', d => d.peers)
+      .classed('benchmark', d => d.benchmark)
       .call(positionCircle)
       .on('click', (event, d) => {
 
@@ -497,6 +510,7 @@ function drawChart(dataset) {
 
     let text = ''
              + 'share class: ' + d.shareClass
+             + '\nISIN code: ' + d.isin
              + '\nstart date: ' + d3.timeFormat('%Y %b %d')(d.periodStart)
              + '\nperf: ' + d.performance.toFixed(3)
              + '\nvol: ' + d.volatility.toFixed(3)
