@@ -25,7 +25,10 @@ function formatDataset(d) {
 function drawChart(dataset) {
 
   dataset
-    .forEach(i => { i.peers = i.source == 'peers'; i.benchmark = i.source == 'benchmark' })
+    .forEach(i => {
+      i.peers = i.source == 'peers'
+      i.benchmark = i.source == 'benchmark'
+    })
 
   const shareClasses = Array.from(new Set(dataset.map(d => d.shareClass )))
   let assetTypes = new Set(dataset.map(d => d.assetType))
@@ -92,7 +95,7 @@ function drawChart(dataset) {
   let innerChart = svg
     .append('g')
       .classed('chart', true)
-      .attr('transform', 'translate(' + margin.left + ',' + margin.top + ')')
+      .attr('transform', `translate(${margin.left}, ${margin.top})`)
       .attr('width', width)
       .attr('height', height)
       .attr('clip-path', 'url(#clip)')
@@ -112,7 +115,7 @@ function drawChart(dataset) {
   svg // shareClass title
     .append('text')
       .classed('share-class-name', true)
-      .attr('transform', 'translate(' + margin.left + ',' + (margin.top - 35) + ')')
+      .attr('transform', `translate(${margin.left}, ${margin.top - 35})`)
       .text('')
 
   //
@@ -127,7 +130,7 @@ function drawChart(dataset) {
 
   const xGridElement = innerChart.append('g')
     .classed('grid', true)
-    .attr('transform', 'translate(' + 0 + ',' + height + ')')
+    .attr('transform', `translate(${0}, ${height})`)
     .call(xGrid)
 
   const yGrid = d3.axisLeft()
@@ -138,7 +141,7 @@ function drawChart(dataset) {
 
   const yGridElement = innerChart.append('g')
     .classed('grid', true)
-    .attr('transform', 'translate(' + 0 + ',' + 0 + ')')
+    .attr('transform', `translate(${0}, ${0})`)
     .call(yGrid)
 
   //
@@ -170,12 +173,12 @@ function drawChart(dataset) {
   const xAxisElement = svg.append('g')
     .classed('axis', true)
     .classed('x', true)
-    .attr('transform', 'translate(' + margin.left + ',' + (margin.top + height + bufferChartAxisBottom) + ')')
+    .attr('transform', `translate(${margin.left}, ${margin.top + height + bufferChartAxisBottom})`)
     .call(xAxis)
 
   xAxisElement.append('text')
     .classed('axis-label', true)
-    .attr('transform', 'translate(' + (4+24) + ',' + (-14) + ')')
+    .attr('transform', `translate(${4+24}, ${-14})`)
     .text('volatility →')
 
   //
@@ -189,12 +192,12 @@ function drawChart(dataset) {
   const yAxisElement = svg.append('g')
     .classed('axis', true)
     .classed('y', true)
-    .attr('transform', 'translate(' + (margin.left - bufferChartAxisLeft) + ',' + margin.top + ')')
+    .attr('transform', `translate(${margin.left - bufferChartAxisLeft}, ${margin.top})`)
     .call(yAxis)
 
   yAxisElement.append('text')
     .classed('axis-label', true)
-    .attr('transform', 'rotate(-90) translate(' + (-height+4+24) + ',' + (24+1) + ')')
+    .attr('transform', `rotate(-90) translate(${-height+4+24}, ${24+1})`)
     .text('performance →')
 
   //
@@ -270,7 +273,7 @@ function drawChart(dataset) {
     })
     .append('text')
       .attr('id', 'play-button')
-      .attr('transform', 'translate(' + (sliderWidth + spaceForPlayButton - 3) + ',' + 5 + ')')
+      .attr('transform', `translate(${sliderWidth + spaceForPlayButton - 3}, ${5})`)
       .text('◀')
       .on('click', function(e) {
         animateThroughTime()
@@ -349,7 +352,10 @@ function drawChart(dataset) {
   function updateOnInput(dataset, chosenShareClass, sliderValue) {
 
     dataset
-      .forEach(i => { i.selected = false; i.background = false })
+      .forEach(i => {
+        i.selected = false
+        i.background = false
+      })
 
     // retrieve most recent from each share class
     var dataInSelectedRange = dataset.filter(d => d.periodStart > sliderValue)
@@ -426,10 +432,10 @@ function drawChart(dataset) {
           .style('display', null)
 
         focus.select('line.vertical')
-          .attr('transform', 'translate(' + xPos + ',' + 0 + ')')
+          .attr('transform', `translate(${xPos}, ${0})`)
 
         focus.select('line.horizontal')
-          .attr('transform', 'translate(' + 0 + ',' + yPos + ')')
+          .attr('transform', `translate(${0}, ${yPos})`)
 
       })
       .on('mouseout', (event, d) => {
@@ -482,7 +488,7 @@ function drawChart(dataset) {
   function positionDatapoint(selection) {
 
     selection
-      .attr('transform', d => 'translate(' + xScale(d.volatility) + ',' + yScale(d.performance) + ')')
+      .attr('transform', d => `translate(${xScale(d.volatility)}, ${yScale(d.performance)})`)
 
   }
 
