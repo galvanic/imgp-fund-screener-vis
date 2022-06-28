@@ -51,8 +51,8 @@ function drawChart(dataset) {
   const width = totalWidth - margin.left - margin.right
   const height = totalHeight - margin.top - margin.bottom
 
-  const shapeSizeDefault = 100
-  const shapeSizeSelected = 200
+  const shapeSizeDefault = 150
+  const shapeSizeSelected = 400
   const shapesMapping = {
       'shareclass': d3.symbolCircle
     , 'benchmark': d3.symbolSquare
@@ -418,6 +418,8 @@ function drawChart(dataset) {
       })
       .on('mouseover', (event, d) => {
 
+        d3.select(event.target).raise()
+
         d3.select(event.target)
           .transition()
             .duration(100)
@@ -523,13 +525,13 @@ function drawChart(dataset) {
   function tooltipText(d) {
 
     let text = ''
-             + 'share class: ' + d.shareClass
+             + '\nsource: ' + d.source
+             + '\nshare class: ' + d.shareClass
              + '\nISIN code: ' + d.isin
              + '\nstart date: ' + d3.timeFormat('%Y %b %d')(d.periodStart)
-             + '\nperf: ' + d.performance.toFixed(3)
-             + '\nvol: ' + d.volatility.toFixed(3)
+             + '\nperf: ' + (d.performance * 100).toFixed(1) + '%'
+             + '\nvol: ' + (d.volatility * 100).toFixed(1) + '%'
              + '\nasset type: ' + d.assetType
-             + '\nsource: ' + d.source
     return text
 
   }
