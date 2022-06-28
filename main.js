@@ -262,22 +262,25 @@ function drawChart(dataset) {
       .attr('id', 'slider')
       .attr('transform', 'translate(' + (totalWidth - sliderWidth - margin.right - 10 - spaceForPlayButton) + ',' + 10 + ')')
       .call(slider)
-    .on('mouseover', function() {
 
-      // stop animation
-      svg.transition().duration(0)
+  const playButtonText = '◀'
+  const pauseButtonText = '❚❚'
 
-      // re-enable zoom
-      innerChartBackground.call(zoom)
-
-    })
+  const playButton = svg.select('g#slider')
     .append('text')
       .attr('id', 'play-button')
       .attr('transform', `translate(${sliderWidth + spaceForPlayButton - 3}, ${5})`)
-      .text('◀')
-      .on('click', function(e) {
-        animateThroughTime()
-        // TODO turn it into pause button
+      .text(playButtonText)
+      .on('click', function(event) {
+
+        const animation_is_playing = playButton.text() == pauseButtonText
+
+        if (animation_is_playing) {
+          stopAnimation()
+        } else {
+          animateThroughTime()
+        }
+
       })
 
   //
@@ -496,6 +499,9 @@ function drawChart(dataset) {
 
   function animateThroughTime() {
 
+    playButton.text(pauseButtonText)
+
+    // disable zoom
     innerChartBackground.on('.zoom', null)
 
     svg.transition()
@@ -504,9 +510,11 @@ function drawChart(dataset) {
       .ease(d3.easeLinear)
       .tween('start_date', function(){
 
-        let a, b
-        [a, b] = slider.domain()
-        const i = d3.interpolateRound(b, a)
+        let far, recent
+        [far, recent] = slider.domain()
+        let current = slider.value()
+
+        const i = d3.interpolateRound(current, far)
 
         return function(t) {
 
@@ -517,8 +525,23 @@ function drawChart(dataset) {
 
       })
       .on('end', function() {
+
+        playButton.text(playButtonText)
         innerChartBackground.call(zoom)
+
       })
+
+  }
+
+  function stopAnimation() {
+
+      // stop animation
+      svg.transition().duration(0)
+
+      // re-enable zoom
+      innerChartBackground.call(zoom)
+
+      playButton.text(playButtonText)
 
   }
 

@@ -71,8 +71,8 @@ svg #slider line.track-inset {
 svg g#slider text#play-button {
   cursor: pointer;
   fill: #003b4a;
-  stroke: #006072;
-  stroke-width: 2px;
+  stroke: #003b4a;
+  stroke-width: 1px;
   }
 
 svg g.chart g.focus line {
