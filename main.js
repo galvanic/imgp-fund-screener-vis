@@ -48,8 +48,13 @@ function drawChart(dataset) {
   const width = totalWidth - margin.left - margin.right
   const height = totalHeight - margin.top - margin.bottom
 
-  const circleRestingRadius = 5
-  const circleSelectedRadius = 8
+  const shapeSizeDefault = 100
+  const shapeSizeSelected = 200
+  const shapesMapping = {
+      'shareclass': d3.symbolCircle
+    , 'benchmark': d3.symbolSquare
+    , 'peers': d3.symbolWye
+  }
 
   //
   // SCALES
@@ -64,6 +69,8 @@ function drawChart(dataset) {
     .domain(d3.extent(dataset, d => d.performance ))
     .range([height, 0])
     .nice()
+
+  let shapeScale = d3.scaleOrdinal(Object.keys(shapesMapping), Object.values(shapesMapping))
 
   //
   // DRAW CHART
@@ -372,7 +379,7 @@ function drawChart(dataset) {
 
   function drawData(dataset) {
 
-    innerChart.selectAll('circle')
+    innerChart.selectAll('path.symbol')
       .data(dataset, d => d.shareClass)
       .join(selectionEnter, selectionUpdate, selectionExit)
 
@@ -380,20 +387,22 @@ function drawChart(dataset) {
 
   function selectionEnter(selection) {
 
-    let circles = selection.append('circle')
+    let datapoints = selection
+      .append('path')
 
-    circles
-      .attr('r', 0)
+    datapoints
+      .attr('d', d => d3.symbol().type( shapeScale(d.source) ).size(shapeSizeDefault)())
       .attr('class', d => d.assetType)
+      .classed('symbol', true) // TODO find out why this needs to be placed after the previous lines
       .classed('selected', d => d.selected)
       .classed('background', d => d.background)
       .classed('peers', d => d.peers)
       .classed('benchmark', d => d.benchmark)
-      .call(positionCircle)
+      .call(positionDatapoint)
       .on('click', (event, d) => {
 
         d3.select(event.target)
-          .attr('r', circleSelectedRadius)
+          .attr('d', d => d3.symbol().type( shapeScale(d.source) ).size(shapeSizeSelected)())
 
         let chosenShareClass = d.shareClass
         updateOnInput(dataset, chosenShareClass, slider.value())
@@ -406,7 +415,7 @@ function drawChart(dataset) {
         d3.select(event.target)
           .transition()
             .duration(100)
-            .attr('r', circleSelectedRadius)
+            .attr('d', d => d3.symbol().type( shapeScale(d.source) ).size(shapeSizeSelected)())
 
         d3.select('text.share-class-name').text(d.shareClass)
 
@@ -428,7 +437,7 @@ function drawChart(dataset) {
         d3.select(event.target)
           .transition()
             .duration(250)
-            .attr('r', circleRestingRadius)
+            .attr('d', d => d3.symbol().type( shapeScale(d.source) ).size(shapeSizeDefault)())
 
         d3.select('text.share-class-name').text('')
 
@@ -437,28 +446,22 @@ function drawChart(dataset) {
 
       })
 
-    circles.append('title')
+    datapoints.append('title')
       .classed('tooltip', true)
       .text(tooltipText)
-
-    circles.transition()
-      .duration(150)
-      .attr('r', circleRestingRadius)
 
   }
 
   function selectionUpdate(selection) {
 
     selection
-      .attr('r', circleRestingRadius)
-      // ^ needed in case the enter transition didn't finish; otherwise the radius is too small for the circle to be visible
       .classed('selected', d => d.selected)
       .classed('background', d => d.background)
       .transition()
         .delay(0)
         .duration(50)
         .ease(d3.easeLinear)
-        .call(positionCircle)
+        .call(positionDatapoint)
 
     d3.selectAll('title.tooltip')
       .remove()
@@ -472,18 +475,14 @@ function drawChart(dataset) {
   function selectionExit(selection) {
 
     selection
-      .transition()
-        .duration(200)
-        .attr('r', 0)
       .remove()
 
   }
 
-  function positionCircle(circles) {
+  function positionDatapoint(selection) {
 
-    circles
-      .attr('cx', d => xScale(d.volatility))
-      .attr('cy', d => yScale(d.performance))
+    selection
+      .attr('transform', d => 'translate(' + xScale(d.volatility) + ',' + yScale(d.performance) + ')')
 
   }
 
