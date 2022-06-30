@@ -31,7 +31,7 @@ function drawChart(dataset) {
     })
 
   const shareClasses = Array.from(new Set(dataset.map(d => d.shareClass )))
-  let assetTypes = new Set(dataset.map(d => d.assetType))
+  const assetTypes = new Set(dataset.map(d => d.assetType))
 
   //
   // CHART CONFIG
@@ -51,7 +51,7 @@ function drawChart(dataset) {
   const width = totalWidth - margin.left - margin.right
   const height = totalHeight - margin.top - margin.bottom
 
-  const shapeSizeDefault = 150
+  const shapeSizeDefault = 100
   const shapeSizeSelected = 400
   const shapesMapping = {
       'shareclass': d3.symbolCircle
@@ -59,21 +59,29 @@ function drawChart(dataset) {
     , 'peers': d3.symbolWye
   }
 
+  // global tracking of state / interaction history / user journey; this will be updated
+  const state = {
+      'selected': null
+    , 'highlighted': null
+    , 'slider': null
+    , 'zoom': null
+  }
+
   //
   // SCALES
   //
 
-  let xScale = d3.scaleLinear()
+  const xScale = d3.scaleLinear()
     .domain(d3.extent(dataset, d => d.volatility ))
     .range([0, width])
     .nice()
 
-  let yScale = d3.scaleLinear()
+  const yScale = d3.scaleLinear()
     .domain(d3.extent(dataset, d => d.performance ))
     .range([height, 0])
     .nice()
 
-  let shapeScale = d3.scaleOrdinal(Object.keys(shapesMapping), Object.values(shapesMapping))
+  const shapeScale = d3.scaleOrdinal(Object.keys(shapesMapping), Object.values(shapesMapping))
 
   //
   // DRAW CHART
@@ -92,7 +100,7 @@ function drawChart(dataset) {
       .attr('x', 0)
       .attr('y', 0)
 
-  let innerChart = svg
+  const innerChart = svg
     .append('g')
       .classed('chart', true)
       .attr('transform', `translate(${margin.left}, ${margin.top})`)
@@ -105,12 +113,6 @@ function drawChart(dataset) {
       .classed('background', true)
       .attr('width', width)
       .attr('height', height)
-    .on('click', (event, d) => {
-
-      let chosenShareClass = null
-      updateOnInput(dataset, chosenShareClass, slider.value())
-
-    })
 
   svg // shareClass title
     .append('text')
@@ -231,10 +233,19 @@ function drawChart(dataset) {
       })
 
       if (chosenAssetTypes.length > 0) {
-        let filteredDataset = dataset.filter(d => chosenAssetTypes.includes(d.assetType))
-        updateOnInput(filteredDataset, null, slider.value())
-      } else {
-        updateOnInput(dataset, null, slider.value())
+
+        const filtered = new Set(dataset
+          .filter(d => chosenAssetTypes.includes(d.assetType))
+          .map(d => d.isin)
+        )
+
+        state.highlighted = filtered
+        updateOnInput()
+
+      } else { // everything is unticked => show all
+
+        updateOnInput({ 'highlighted': new Set(dataset.map(d => d.isin)) })
+
       }
 
     })
@@ -252,9 +263,17 @@ function drawChart(dataset) {
     .tickFormat(d3.timeFormat('%Y'))
     .displayFormat(d3.timeFormat('%Y %b %d'))
     .default(sliderValueAtPageLoad)
+    .on('start', function(sliderValue) {
+      // TODO there's some weird lag where the user must click twice
+
+      stopAnimation()
+
+    })
     .on('onchange', function(sliderValue) {
-      chosenShareClass = null
-      updateOnInput(dataset, chosenShareClass, sliderValue)
+
+      state.slider = sliderValue
+      updateOnInput()
+
     })
 
   svg // slider element
@@ -299,32 +318,9 @@ function drawChart(dataset) {
     xGridElement.call(xGrid.scale(newXScale))
     yGridElement.call(yGrid.scale(newYScale))
 
-    // update drawn datapoints
-    d3.selectAll('circle')
-      .attr('cx', d => newXScale(d.volatility))
-      .attr('cy', d => newYScale(d.performance))
-      .on('mouseover', (event, d) => {
-
-        d3.select(event.target)
-          .transition()
-            .duration(100)
-            .attr('r', circleSelectedRadius)
-
-        d3.select('text.share-class-name').text(d.shareClass)
-
-        let xPos = newXScale(d.volatility)
-        let yPos = newYScale(d.performance)
-
-        d3.select('g.focus')
-          .style('display', null)
-
-        d3.select('g.focus line.vertical')
-          .attr('transform', 'translate(' + xPos + ',' + 0 + ')')
-
-        d3.select('g.focus line.horizontal')
-          .attr('transform', 'translate(' + 0 + ',' + yPos + ')')
-
-      })
+    // TODO update drawn datapoints
+    state.zoom = null
+    updateOnInput()
 
     // TODO create a "reset zoom" button
 
@@ -342,8 +338,7 @@ function drawChart(dataset) {
   // DRAW DATA
   //
 
-  let chosenShareClass = null
-  updateOnInput(dataset, chosenShareClass, sliderValueAtPageLoad)
+  updateOnInput()
 
   //
   // HELPER FUNCTIONS
@@ -352,7 +347,13 @@ function drawChart(dataset) {
   function groupby(d) { return d.shareClass }
   function extractFirstItem(group) { return group[0] }
 
-  function updateOnInput(dataset, chosenShareClass, sliderValue) {
+  function updateOnInput() {
+
+    // the default is to show what is already there
+    const selected = state.selected || null
+    const highlighted = state.highlighted || new Set(dataset.map(d => d.isin))
+    const sliderValue = state.slider || slider.value()
+    const zoom = state.zoom || null
 
     dataset
       .forEach(i => {
@@ -361,28 +362,27 @@ function drawChart(dataset) {
       })
 
     // retrieve most recent from each share class
-    var dataInSelectedRange = dataset.filter(d => d.periodStart > sliderValue)
-    dataInSelectedRange = Array
-      .from(d3.rollup(dataInSelectedRange, extractFirstItem, groupby)
-      .values())
+    var filteredData = dataset
+      .filter(d => d.source == 'shareclass')
+      .filter(d => d.periodStart > sliderValue)
+      .filter(d => highlighted.has(d.isin))
 
-    if (chosenShareClass !== null) {
+    filteredData = Array.from(d3
+      .rollup(filteredData, extractFirstItem, groupby)
+      .values()
+      )
 
-      dataInSelectedRange.filter(d => d.shareClass == chosenShareClass)
+    if (selected !== null) {
+
+      filteredData.filter(d => d.isin == selected)
         .forEach(i => i.selected = true)
 
-      dataInSelectedRange.filter(d => d.shareClass !== chosenShareClass)
+      filteredData.filter(d => d.isin !== selected)
         .forEach(i => i.background = true)
-
-      let chosenISIN = dataset.filter(d => d.shareClass == chosenShareClass)[0].isin
-      dataInSelectedRange.filter(d => d.isin == chosenISIN)
-        .forEach(i => i.selected = true)
-      dataInSelectedRange.filter(d => d.isin == chosenISIN)
-        .forEach(i => i.background = false)
 
     }
 
-    drawData(dataInSelectedRange)
+    drawData(filteredData)
 
   }
 
@@ -396,7 +396,7 @@ function drawChart(dataset) {
 
   function selectionEnter(selection) {
 
-    let datapoints = selection
+    const datapoints = selection
       .append('path')
 
     datapoints
@@ -413,25 +413,29 @@ function drawChart(dataset) {
         d3.select(event.target)
           .attr('d', d => d3.symbol().type( shapeScale(d.source) ).size(shapeSizeSelected)())
 
-        let chosenShareClass = d.shareClass
-        updateOnInput(dataset, chosenShareClass, slider.value())
+        state.selected = d.isin
+        updateOnInput()
 
-        d3.select('text.share-class-name').text(chosenShareClass)
+        d3.select('text.share-class-name').text(d.shareClass)
 
       })
       .on('mouseover', (event, d) => {
 
-        d3.select(event.target).raise()
+        const dot = d3.select(event.target)
+        dot.raise()
 
-        d3.select(event.target)
+        dot
+          .classed('background', false)
           .transition()
             .duration(100)
             .attr('d', d => d3.symbol().type( shapeScale(d.source) ).size(shapeSizeSelected)())
 
         d3.select('text.share-class-name').text(d.shareClass)
 
-        let xPos = xScale(d.volatility)
-        let yPos = yScale(d.performance)
+        // draw the focus line
+
+        const xPos = xScale(d.volatility)
+        const yPos = yScale(d.performance)
 
         focus
           .style('display', null)
@@ -445,7 +449,10 @@ function drawChart(dataset) {
       })
       .on('mouseout', (event, d) => {
 
-        d3.select(event.target)
+        const dot = d3.select(event.target)
+        if (state.selected && !dot.classed('selected')) { dot.classed('background', true) }
+
+        dot
           .transition()
             .duration(250)
             .attr('d', d => d3.symbol().type( shapeScale(d.source) ).size(shapeSizeDefault)())
@@ -512,13 +519,13 @@ function drawChart(dataset) {
 
         let far, recent
         [far, recent] = slider.domain()
-        let current = slider.value()
+        const current = slider.value()
 
         const i = d3.interpolateRound(current, far)
 
         return function(t) {
 
-          let simulatedSliderValue = i(t)
+          const simulatedSliderValue = i(t)
           slider.value(simulatedSliderValue)
 
         }
@@ -547,7 +554,7 @@ function drawChart(dataset) {
 
   function tooltipText(d) {
 
-    let text = ''
+    const text = ''
              + '\nsource: ' + d.source
              + '\nshare class: ' + d.shareClass
              + '\nISIN code: ' + d.isin
