@@ -7,7 +7,7 @@ h1 {
   font-family: Chronicle Display,Scala Sans Pro,sans-serif;
   }
 
-g.chart rect.background, path.symbol.background {
+g.chart rect.background {
   fill: #f0f0f0;
   }
 
@@ -108,8 +108,8 @@ div#vis ul li input[type=checkbox] {
   }
 
 path.symbol {
-  opacity: 100%;
-  fill-opacity: 0%;
+  opacity: 90%;
+  fill-opacity: 100%;
   stroke-width: 2px;
   }
 

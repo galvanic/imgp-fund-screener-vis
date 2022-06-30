@@ -51,9 +51,9 @@ function drawChart(dataset) {
   const width = totalWidth - margin.left - margin.right
   const height = totalHeight - margin.top - margin.bottom
 
-  const shapeSizeDefault = 100
-  const shapeSizeFocused = 400
-  const shapeSizeSelected = 180
+  const shapeSizeDefault = 200
+  const shapeSizeFocused = 600
+  const shapeSizeSelected = 250
 
   const shapesMapping = {
       'shareclass': d3.symbolCircle
