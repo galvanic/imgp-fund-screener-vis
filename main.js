@@ -548,7 +548,7 @@ function drawChart(dataset) {
         .datum(trailData)
         .classed('trail', true)
         .attr('d', d3.line()
-          .curve(d3.curveCardinal.tension(0.6))
+          .curve(d3.curveCardinal.tension(0.0))
           .x(d => xScale(d.volatility))
           .y(d => yScale(d.performance))
         )

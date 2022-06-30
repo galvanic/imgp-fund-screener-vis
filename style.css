@@ -136,13 +136,15 @@ path.symbol.peers, path.symbol.benchmark {
 
 path.trail {
   fill: none;
-  stroke: #e0e0e0;
-  stroke-width: 2px;
-  filter: brightness(102%);
+  stroke: #bababa;
+  stroke-width: 6px;
+  opacity: 10%
   }
 
 circle.trail {
   r: 1px;
-  fill: #e0e0e0;
-  filter: brightness(90%);
+  stroke: #bababa;
+  filter: brightness(60%);
+  opacity: 10%
   }
+
