@@ -361,11 +361,15 @@ function drawChart(dataset) {
     const dots_are_selected = selected_isins !== null
 
     // TODO cleaner to have a scoped dataset inside here (?)
-    dataset // reset state
+    // reset state
+    dataset
       .forEach(i => {
         i.selected = false
         i.background = false
       })
+
+    d3.selectAll('.trail')
+      .remove()
 
     // retrieve most recent from each share class
     var dataToShow = dataset
@@ -388,6 +392,7 @@ function drawChart(dataset) {
 
     }
 
+    drawTrail(selected_isins)
     drawData(dataToShow)
 
   }
@@ -417,16 +422,12 @@ function drawChart(dataset) {
       .on('click', (event, d) => {
         // TODO factor out A. when a new selected group is drawn, B. when group is de-selected
 
-        d3.selectAll('.trail')
-          .remove()
-
         // all other circles must return to original size
         // TODO fix bug: maybe this is causing a glitch
         dots
           .attr('d', d => d3.symbol().type( shapeScale(d.source) ).size(shapeSizeDefault)())
 
         state.selected_isins = d.isin
-        drawTrail(d.isin)
         updateOnInput()
 
         d3.select(event.target)
@@ -542,8 +543,11 @@ function drawChart(dataset) {
 
   function drawTrail(isin) {
 
+    const sliderValue = state.slider || slider.value()
+
     const trailData = dataset
       .filter(d => d.isin == isin && d.source == 'shareclass')
+      .filter(d => d.periodStart > sliderValue)
 
     innerChart
       .append('path')
