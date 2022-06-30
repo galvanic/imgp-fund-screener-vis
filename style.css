@@ -61,6 +61,14 @@ g#slider line.track-fill, g#slider line.track-inset {
   stroke-width: 9px;
   }
 
+g#slider line.track-fill {
+  stroke: #f0f0f0;
+  }
+
+g#slider line.track-inset {
+  stroke: #ffb600;
+  }
+
 g#slider text#play-button {
   cursor: pointer;
   fill: #003b4a;
