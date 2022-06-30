@@ -130,9 +130,5 @@ path.symbol.background {
 path.symbol.peers, path.symbol.benchmark {
   fill: #143b4a;
   stroke: #e0e0e0;
-  display: none;
   }
 
-path.symbol.peers.selected, path.symbol.benchmark.selected {
-  display: inline;
-  }

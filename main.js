@@ -358,6 +358,9 @@ function drawChart(dataset) {
     const sliderValue = state.slider || slider.value()
     const zoom = state.zoom || null
 
+    const dots_are_selected = selected_isins !== null
+
+    // TODO cleaner to have a scoped dataset inside here (?)
     dataset
       .forEach(i => {
         i.selected = false
@@ -366,16 +369,16 @@ function drawChart(dataset) {
 
     // retrieve most recent from each share class
     var filteredData = dataset
-      .filter(d => d.source == 'shareclass')
       .filter(d => d.periodStart > sliderValue)
       .filter(d => highlighted_isins.has(d.isin))
+      .filter(d => d.isin == selected_isins || d.source == 'shareclass')
 
-    filteredData = Array.from(d3
+    var filteredData = Array.from(d3
       .rollup(filteredData, extractFirstItem, groupby)
       .values()
       )
 
-    if (selected_isins !== null) {
+    if (dots_are_selected) {
 
       filteredData.filter(d => d.isin == selected_isins)
         .forEach(i => i.selected = true)
