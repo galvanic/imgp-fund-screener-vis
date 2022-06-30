@@ -52,7 +52,9 @@ function drawChart(dataset) {
   const height = totalHeight - margin.top - margin.bottom
 
   const shapeSizeDefault = 100
-  const shapeSizeSelected = 400
+  const shapeSizeFocused = 400
+  const shapeSizeSelected = 150
+
   const shapesMapping = {
       'shareclass': d3.symbolCircle
     , 'benchmark': d3.symbolSquare
@@ -412,7 +414,7 @@ function drawChart(dataset) {
       .on('click', (event, d) => {
 
         d3.select(event.target)
-          .attr('d', d => d3.symbol().type( shapeScale(d.source) ).size(shapeSizeSelected)())
+          .attr('d', d => d3.symbol().type( shapeScale(d.source) ).size(shapeSizeFocused)())
 
         state.selected_isins = d.isin
         updateOnInput()
@@ -429,7 +431,7 @@ function drawChart(dataset) {
           .classed('background', false)
           .transition()
             .duration(100)
-            .attr('d', d => d3.symbol().type( shapeScale(d.source) ).size(shapeSizeSelected)())
+            .attr('d', d => d3.symbol().type( shapeScale(d.source) ).size(shapeSizeFocused)())
 
         d3.select('text.share-class-name').text(d.shareClass)
 
@@ -451,14 +453,26 @@ function drawChart(dataset) {
       .on('mouseout', (event, d) => {
 
         const dot = d3.select(event.target)
-        if (state.selected_isins && !dot.classed('selected')) { dot.classed('background', true) }
+        const dots_are_selected_but_not_this_dot = state.selected_isins && !dot.classed('selected')
 
-        dot
-          .transition()
-            .duration(250)
-            .attr('d', d => d3.symbol().type( shapeScale(d.source) ).size(shapeSizeDefault)())
+        if (dots_are_selected_but_not_this_dot) {
 
-        d3.select('text.share-class-name').text('')
+          dot
+            .classed('background', true)
+            .transition()
+              .duration(250)
+              .attr('d', d => d3.symbol().type( shapeScale(d.source) ).size(shapeSizeDefault)())
+
+          d3.select('text.share-class-name').text('')
+
+        } else {
+
+          dot
+            .transition()
+              .duration(250)
+              .attr('d', d => d3.symbol().type( shapeScale(d.source) ).size(shapeSizeSelected)())
+
+        }
 
         d3.select('g.focus')
           .style('display', 'none')
