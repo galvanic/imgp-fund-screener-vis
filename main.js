@@ -459,9 +459,11 @@ function drawChart(dataset) {
 
         focus.select('line.vertical')
           .attr('transform', `translate(${xPos}, ${0})`)
+          .attr('y1', yPos)
 
         focus.select('line.horizontal')
           .attr('transform', `translate(${0}, ${yPos})`)
+          .attr('x2', xPos)
 
       })
       .on('mouseout', (event, d) => {
