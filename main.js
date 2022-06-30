@@ -415,16 +415,23 @@ function drawChart(dataset) {
       .classed('benchmark', d => d.benchmark)
       .call(positionDot)
       .on('click', (event, d) => {
+        // TODO factor out A. when a new selected group is drawn, B. when group is de-selected
+
+        d3.selectAll('.trail')
+          .remove()
 
         // all other circles must return to original size
+        // TODO fix bug: maybe this is causing a glitch
         dots
           .attr('d', d => d3.symbol().type( shapeScale(d.source) ).size(shapeSizeDefault)())
 
+        state.selected_isins = d.isin
+        drawTrail(d.isin)
+        updateOnInput()
+
         d3.select(event.target)
           .attr('d', d => d3.symbol().type( shapeScale(d.source) ).size(shapeSizeFocused)())
-
-        state.selected_isins = d.isin
-        updateOnInput()
+          .raise()
 
         d3.select('text.share-class-name').text(d.shareClass)
 
@@ -528,6 +535,31 @@ function drawChart(dataset) {
 
     selection
       .attr('transform', d => `translate(${xScale(d.volatility)}, ${yScale(d.performance)})`)
+
+  }
+
+  function drawTrail(isin) {
+
+    const trailData = dataset
+      .filter(d => d.isin == isin && d.source == 'shareclass')
+
+    innerChart
+      .append('path')
+        .datum(trailData)
+        .classed('trail', true)
+        .attr('d', d3.line()
+          .curve(d3.curveCardinal.tension(0.6))
+          .x(d => xScale(d.volatility))
+          .y(d => yScale(d.performance))
+        )
+
+    innerChart.selectAll('circle.trail')
+      .data(trailData)
+      .enter()
+        .append('circle')
+          .classed('trail', true)
+          .attr('cx', d => xScale(d.volatility))
+          .attr('cy', d => yScale(d.performance))
 
   }
 
