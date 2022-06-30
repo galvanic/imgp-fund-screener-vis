@@ -61,8 +61,8 @@ function drawChart(dataset) {
 
   // global tracking of state / interaction history / user journey; this will be updated
   const state = {
-      'selected': null
-    , 'highlighted': null
+      'selected_isins': null
+    , 'highlighted_isins': null
     , 'slider': null
     , 'zoom': null
   }
@@ -239,12 +239,13 @@ function drawChart(dataset) {
           .map(d => d.isin)
         )
 
-        state.highlighted = filtered
+        state.highlighted_isins = filtered
         updateOnInput()
 
       } else { // everything is unticked => show all
 
-        updateOnInput({ 'highlighted': new Set(dataset.map(d => d.isin)) })
+        state.highlighted_isins = new Set(dataset.map(d => d.isin))
+        updateOnInput()
 
       }
 
@@ -350,8 +351,8 @@ function drawChart(dataset) {
   function updateOnInput() {
 
     // the default is to show what is already there
-    const selected = state.selected || null
-    const highlighted = state.highlighted || new Set(dataset.map(d => d.isin))
+    const selected_isins = state.selected_isins || null
+    const highlighted_isins = state.highlighted_isins || new Set(dataset.map(d => d.isin))
     const sliderValue = state.slider || slider.value()
     const zoom = state.zoom || null
 
@@ -365,19 +366,19 @@ function drawChart(dataset) {
     var filteredData = dataset
       .filter(d => d.source == 'shareclass')
       .filter(d => d.periodStart > sliderValue)
-      .filter(d => highlighted.has(d.isin))
+      .filter(d => highlighted_isins.has(d.isin))
 
     filteredData = Array.from(d3
       .rollup(filteredData, extractFirstItem, groupby)
       .values()
       )
 
-    if (selected !== null) {
+    if (selected_isins !== null) {
 
-      filteredData.filter(d => d.isin == selected)
+      filteredData.filter(d => d.isin == selected_isins)
         .forEach(i => i.selected = true)
 
-      filteredData.filter(d => d.isin !== selected)
+      filteredData.filter(d => d.isin !== selected_isins)
         .forEach(i => i.background = true)
 
     }
@@ -413,7 +414,7 @@ function drawChart(dataset) {
         d3.select(event.target)
           .attr('d', d => d3.symbol().type( shapeScale(d.source) ).size(shapeSizeSelected)())
 
-        state.selected = d.isin
+        state.selected_isins = d.isin
         updateOnInput()
 
         d3.select('text.share-class-name').text(d.shareClass)
@@ -450,7 +451,7 @@ function drawChart(dataset) {
       .on('mouseout', (event, d) => {
 
         const dot = d3.select(event.target)
-        if (state.selected && !dot.classed('selected')) { dot.classed('background', true) }
+        if (state.selected_isins && !dot.classed('selected')) { dot.classed('background', true) }
 
         dot
           .transition()
