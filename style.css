@@ -114,7 +114,7 @@ path.symbol {
 path.symbol.selected {
   stroke: #e0e0e0;
   fill-opacity: 100%;
-  stroke-width: 1px;
+  stroke-width: 2px;
   }
 
 path.symbol.background {

@@ -53,7 +53,7 @@ function drawChart(dataset) {
 
   const shapeSizeDefault = 100
   const shapeSizeFocused = 400
-  const shapeSizeSelected = 150
+  const shapeSizeSelected = 180
 
   const shapesMapping = {
       'shareclass': d3.symbolCircle
@@ -361,34 +361,34 @@ function drawChart(dataset) {
     const dots_are_selected = selected_isins !== null
 
     // TODO cleaner to have a scoped dataset inside here (?)
-    dataset
+    dataset // reset state
       .forEach(i => {
         i.selected = false
         i.background = false
       })
 
     // retrieve most recent from each share class
-    var filteredData = dataset
+    var dataToShow = dataset
       .filter(d => d.periodStart > sliderValue)
       .filter(d => highlighted_isins.has(d.isin))
       .filter(d => d.isin == selected_isins || d.source == 'shareclass')
 
-    var filteredData = Array.from(d3
-      .rollup(filteredData, extractFirstItem, groupby)
+    var dataToShow = Array.from(d3
+      .rollup(dataToShow, extractFirstItem, groupby)
       .values()
       )
 
     if (dots_are_selected) {
 
-      filteredData.filter(d => d.isin == selected_isins)
+      dataToShow.filter(d => d.isin == selected_isins)
         .forEach(i => i.selected = true)
 
-      filteredData.filter(d => d.isin !== selected_isins)
+      dataToShow.filter(d => d.isin !== selected_isins)
         .forEach(i => i.background = true)
 
     }
 
-    drawData(filteredData)
+    drawData(dataToShow)
 
   }
 
@@ -402,10 +402,10 @@ function drawChart(dataset) {
 
   function selectionEnter(selection) {
 
-    const datapoints = selection
+    const dots = selection
       .append('path')
 
-    datapoints
+    dots
       .attr('d', d => d3.symbol().type( shapeScale(d.source) ).size(shapeSizeDefault)())
       .attr('class', d => d.assetType)
       .classed('symbol', true) // TODO find out why this needs to be placed after the previous lines
@@ -413,8 +413,12 @@ function drawChart(dataset) {
       .classed('background', d => d.background)
       .classed('peers', d => d.peers)
       .classed('benchmark', d => d.benchmark)
-      .call(positionDatapoint)
+      .call(positionDot)
       .on('click', (event, d) => {
+
+        // all other circles must return to original size
+        dots
+          .attr('d', d => d3.symbol().type( shapeScale(d.source) ).size(shapeSizeDefault)())
 
         d3.select(event.target)
           .attr('d', d => d3.symbol().type( shapeScale(d.source) ).size(shapeSizeFocused)())
@@ -457,16 +461,21 @@ function drawChart(dataset) {
 
         const dot = d3.select(event.target)
         const dots_are_selected_but_not_this_dot = state.selected_isins && !dot.classed('selected')
+        // this distinction is important because of the state where nothing is selected, you don't want dots going into background mode
 
         if (dots_are_selected_but_not_this_dot) {
 
+          dot.classed('background', true)
+          d3.select('text.share-class-name').text('')
+
+        }
+
+        if (!dot.classed('selected')) {
+
           dot
-            .classed('background', true)
             .transition()
               .duration(250)
               .attr('d', d => d3.symbol().type( shapeScale(d.source) ).size(shapeSizeDefault)())
-
-          d3.select('text.share-class-name').text('')
 
         } else {
 
@@ -482,7 +491,7 @@ function drawChart(dataset) {
 
       })
 
-    datapoints.append('title')
+    dots.append('title')
       .classed('tooltip', true)
       .text(tooltipText)
 
@@ -497,7 +506,7 @@ function drawChart(dataset) {
         .delay(0)
         .duration(50)
         .ease(d3.easeLinear)
-        .call(positionDatapoint)
+        .call(positionDot)
 
     d3.selectAll('title.tooltip')
       .remove()
@@ -515,7 +524,7 @@ function drawChart(dataset) {
 
   }
 
-  function positionDatapoint(selection) {
+  function positionDot(selection) {
 
     selection
       .attr('transform', d => `translate(${xScale(d.volatility)}, ${yScale(d.performance)})`)
@@ -585,3 +594,6 @@ function drawChart(dataset) {
   }
 
 }
+
+// TODO bug: if animation is in place and i mouseover a dot it doesn't come out of background, and if i click on a dot it is selected but doesn't come out of focused selected size (ie stays big size as if mouseout event wasn't triggered)
+
