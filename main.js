@@ -335,7 +335,7 @@ function drawChart(dataset) {
     //.translateExtent([[-100, -100], [width + 90, height + 100]])
     .on('zoom', handleZoom)
 
-  innerChartBackground.call(zoom)
+  enableZoom()
 
   //
   // DRAW DATA
@@ -599,7 +599,7 @@ function drawChart(dataset) {
       .on('end', function() {
 
         playButton.text(playButtonText)
-        innerChartBackground.call(zoom)
+        enableZoom()
 
       })
 
@@ -607,15 +607,15 @@ function drawChart(dataset) {
 
   function stopAnimation() {
 
-      // stop animation
-      svg.transition().duration(0)
+    // stop animation
+    svg.transition().duration(0)
 
-      // re-enable zoom
-      innerChartBackground.call(zoom)
-
-      playButton.text(playButtonText)
+    enableZoom()
+    playButton.text(playButtonText)
 
   }
+
+  function enableZoom() { innerChartBackground.call(zoom) }
 
   function tooltipText(d) {
 
