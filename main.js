@@ -1,6 +1,6 @@
 'use strict'
 
-const dataFilepath = 'dataset.csv'
+const dataFilepath = 'dataset_Y135.csv'
 
 d3.csv(dataFilepath, formatDataset)
   .then(drawChart)
@@ -10,14 +10,17 @@ function formatDataset(d) {
   const parseTime = d3.timeParse('%Y-%m-%d')
 
   return {
-    shareClass: d.share_class
-  , performance: parseFloat(d.performance)
-  , volatility: parseFloat(d.volatility)
-  , period: parseInt(d.duration)
-  , periodStart: parseTime(d.start_date)
+    groupingID: d.grouping_id
+  , isin: d.isin
   , assetType: d.asset_type
   , source: d.source
-  , isin: d.isin_code
+  , mstarcode: d.mstarcode
+  , name: d.name
+  , periodStart: parseTime(d.start_date)
+  , periodEnd: parseTime(d.end_date)
+  , periodLength: parseInt(d.period_length_yrs)
+  , performance: parseFloat(d.performance) / 100
+  , volatility: parseFloat(d.volatility) / 100
   }
 
 }
@@ -26,12 +29,11 @@ function drawChart(dataset) {
 
   dataset
     .forEach(i => {
-      i.peers = i.source == 'peers'
-      i.benchmark = i.source == 'benchmark'
+      i.peers = i.source == 'category'
+      i.benchmark = i.source == 'bench'
     })
 
-  const shareClasses = Array.from(new Set(dataset.map(d => d.shareClass )))
-  const assetTypes = new Set(dataset.map(d => d.assetType))
+  dataset.sort((a, b) => { b.periodStart - a.periodStart })
 
   //
   // CHART CONFIG
@@ -39,7 +41,8 @@ function drawChart(dataset) {
 
   const sliderWidth = 500
   const spaceForPlayButton = 30
-  const sliderValueAtPageLoad = d3.max(dataset, d => d.periodStart )
+  const sliderValueAtPageLoad = d3.max(dataset, d => d.periodEnd)
+  const defaultPeriodLength = 3 // years
 
   const totalWidth = 1200
   const totalHeight = 800
@@ -52,19 +55,20 @@ function drawChart(dataset) {
   const height = totalHeight - margin.top - margin.bottom
 
   const shapeSizeDefault = 200
-  const shapeSizeFocused = 600
+  const shapeSizeFocused = 500
   const shapeSizeSelected = 250
 
   const shapesMapping = {
-      'shareclass': d3.symbolCircle
-    , 'benchmark': d3.symbolSquare
-    , 'peers': d3.symbolWye
+      'share': d3.symbolCircle
+    , 'bench': d3.symbolSquare
+    , 'category': d3.symbolWye
   }
 
   // global tracking of state / interaction history / user journey; this will be updated
   const state = {
-      'selected_isins': null
-    , 'highlighted_isins': null
+      'selected_ids': null
+    , 'selected_period_length': null
+    , 'highlighted_ids': null
     , 'slider': null
     , 'zoom': null
   }
@@ -116,9 +120,9 @@ function drawChart(dataset) {
       .attr('width', width)
       .attr('height', height)
 
-  svg // shareClass title
+  svg // fund name
     .append('text')
-      .classed('share-class-name', true)
+      .classed('fund-name', true)
       .attr('transform', `translate(${margin.left}, ${margin.top - 35})`)
       .text('')
 
@@ -210,8 +214,12 @@ function drawChart(dataset) {
 
   const AssetTypeList = d3.select('div#vis')
     .append('ul')
+      .classed('asset-types', true)
 
-  assetTypes.forEach(function(i) {
+  const assetTypes = new Set(dataset.map(d => d.assetType))
+
+  // TODO refactor below in d3's declarative way instead of procedural
+  assetTypes.forEach((i) => {
     AssetTypeList
       .append('li')
         .append('label')
@@ -238,15 +246,15 @@ function drawChart(dataset) {
 
         const filtered = new Set(dataset
           .filter(d => chosenAssetTypes.includes(d.assetType))
-          .map(d => d.isin)
+          .map(d => d.groupingID)
         )
 
-        state.highlighted_isins = filtered
+        state.highlighted_ids = filtered
         updateOnInput()
 
       } else { // everything is unticked => show all
 
-        state.highlighted_isins = new Set(dataset.map(d => d.isin))
+        state.highlighted_ids = new Set(dataset.map(d => d.groupingID))
         updateOnInput()
 
       }
@@ -259,12 +267,12 @@ function drawChart(dataset) {
 
   const slider = d3.sliderBottom()
     .min(d3.min(dataset, d => d.periodStart ))
-    .max(d3.max(dataset, d => d.periodStart ) - 1)
+    .max(d3.max(dataset, d => d.periodEnd ))
     .width(sliderWidth)
-    .fill('none')
+    .fill('#ffb600')
     .ticks(8)
     .tickFormat(d3.timeFormat('%Y'))
-    .displayFormat(d3.timeFormat('%Y %b %d'))
+    //.displayFormat(d3.timeFormat('%Y %b %d'))
     .default(sliderValueAtPageLoad)
     .on('start', function(sliderValue) {
       // TODO there's some weird lag where the user must click twice
@@ -274,16 +282,28 @@ function drawChart(dataset) {
     })
     .on('onchange', function(sliderValue) {
 
-      state.slider = sliderValue
+      updateSliderPeriodLine()
       updateOnInput()
 
     })
 
-  svg // slider element
+  const sliderElement = svg
     .append('g')
       .attr('id', 'slider')
       .attr('transform', 'translate(' + (totalWidth - sliderWidth - margin.right - 10 - spaceForPlayButton) + ',' + 10 + ')')
       .call(slider)
+
+  const originalSliderLine = sliderElement.select('line.track-fill')
+
+  const sliderScale = d3.scaleTime()
+    .domain(slider.domain())
+    .range([0, sliderWidth])
+    .nice()
+
+  const sliderPeriodLine = sliderElement.select('g.slider')
+    .append('line')
+      .classed('track-fill', true)
+      .classed('fixed-period', true)
 
   const playButtonText = '◀'
   const pauseButtonText = '❚❚'
@@ -304,6 +324,38 @@ function drawChart(dataset) {
         }
 
       })
+
+  const yearsList = d3.select('div#vis')
+    .append('ul')
+      .classed('years', true)
+
+  const years = new Set(dataset.map(d => d.periodLength))
+
+  // TODO refactor below in d3's declarative way instead of procedural
+  years.forEach((i) => {
+    yearsList
+      .append('li')
+        .append('label')
+          .text(`${i} years`)
+          .append('input')
+            .attr('type', 'radio')
+            .attr('name', 'years')
+            .attr('value', i)
+            .classed(`y${i}`, true)
+  })
+
+  yearsList.select(`input.y${defaultPeriodLength}`)
+    .attr('checked', true)
+
+  d3.selectAll('input[type=radio]')
+    .on('change', function(event) {
+
+      updateSliderPeriodLine()
+      updateOnInput()
+
+    })
+
+  updateSliderPeriodLine()
 
   //
   // ZOOM
@@ -347,18 +399,19 @@ function drawChart(dataset) {
   // HELPER FUNCTIONS
   //
 
-  function groupby(d) { return d.shareClass }
+  function groupby(d) { return d.name }
   function extractFirstItem(group) { return group[0] }
 
   function updateOnInput() {
 
     // the default is to show what is already there
-    const selected_isins = state.selected_isins || null
-    const highlighted_isins = state.highlighted_isins || new Set(dataset.map(d => d.isin))
-    const sliderValue = state.slider || slider.value()
+    const selected_ids = state.selected_ids || null
+    const selectedPeriodLength = state.selected_period_length || getSelectedPeriodLength()
+    const highlighted_ids = state.highlighted_ids || new Set(dataset.map(d => d.groupingID))
+    const sliderValues = state.slider || [ getSliderValuePeriodStart(), slider.value() ]
     const zoom = state.zoom || null
 
-    const dots_are_selected = selected_isins !== null
+    const dots_are_selected = selected_ids !== null
 
     // TODO cleaner to have a scoped dataset inside here (?)
     // reset state
@@ -371,11 +424,11 @@ function drawChart(dataset) {
     d3.selectAll('.trail')
       .remove()
 
-    // retrieve most recent from each share class
     var dataToShow = dataset
-      .filter(d => d.periodStart > sliderValue)
-      .filter(d => highlighted_isins.has(d.isin))
-      .filter(d => d.isin == selected_isins || d.source == 'shareclass')
+      .filter(d => d.groupingID == selected_ids || d.source == 'share')
+      .filter(d => highlighted_ids.has(d.groupingID))
+      .filter(d => d.periodLength == selectedPeriodLength)
+      .filter(d => (d3.timeWeek.offset(sliderValues[1], -2) < d.periodEnd) && (d.periodEnd < d3.timeWeek.offset(sliderValues[1], +2)))
 
     var dataToShow = Array.from(d3
       .rollup(dataToShow, extractFirstItem, groupby)
@@ -384,15 +437,15 @@ function drawChart(dataset) {
 
     if (dots_are_selected) {
 
-      dataToShow.filter(d => d.isin == selected_isins)
+      dataToShow.filter(d => d.groupingID == selected_ids)
         .forEach(i => i.selected = true)
 
-      dataToShow.filter(d => d.isin !== selected_isins)
+      dataToShow.filter(d => d.groupingID !== selected_ids)
         .forEach(i => i.background = true)
 
     }
 
-    drawTrail(selected_isins)
+    drawTrail(selected_ids)
     drawData(dataToShow)
 
   }
@@ -400,7 +453,7 @@ function drawChart(dataset) {
   function drawData(dataset) {
 
     innerChart.selectAll('path.symbol')
-      .data(dataset, d => d.shareClass)
+      .data(dataset, d => d.mstarcode)
       .join(selectionEnter, selectionUpdate, selectionExit)
 
   }
@@ -427,14 +480,14 @@ function drawChart(dataset) {
         dots
           .attr('d', d => d3.symbol().type( shapeScale(d.source) ).size(shapeSizeDefault)())
 
-        state.selected_isins = d.isin
+        state.selected_ids = d.groupingID
         updateOnInput()
 
         d3.select(event.target)
           .attr('d', d => d3.symbol().type( shapeScale(d.source) ).size(shapeSizeFocused)())
           .raise()
 
-        d3.select('text.share-class-name').text(d.shareClass)
+        d3.select('text.fund-name').text(d.name)
 
       })
       .on('mouseover', (event, d) => {
@@ -445,10 +498,10 @@ function drawChart(dataset) {
         dot
           .classed('background', false)
           .transition()
-            .duration(100)
+            .duration(300)
             .attr('d', d => d3.symbol().type( shapeScale(d.source) ).size(shapeSizeFocused)())
 
-        d3.select('text.share-class-name').text(d.shareClass)
+        d3.select('text.fund-name').text(d.name)
 
         // draw the focus line
 
@@ -470,13 +523,13 @@ function drawChart(dataset) {
       .on('mouseout', (event, d) => {
 
         const dot = d3.select(event.target)
-        const dots_are_selected_but_not_this_dot = state.selected_isins && !dot.classed('selected')
+        const dots_are_selected_but_not_this_dot = state.selected_ids && !dot.classed('selected')
         // this distinction is important because of the state where nothing is selected, you don't want dots going into background mode
 
         if (dots_are_selected_but_not_this_dot) {
 
           dot.classed('background', true)
-          d3.select('text.share-class-name').text('')
+          d3.select('text.fund-name').text('')
 
         }
 
@@ -484,14 +537,14 @@ function drawChart(dataset) {
 
           dot
             .transition()
-              .duration(250)
+              .duration(400)
               .attr('d', d => d3.symbol().type( shapeScale(d.source) ).size(shapeSizeDefault)())
 
         } else {
 
           dot
             .transition()
-              .duration(250)
+              .duration(400)
               .attr('d', d => d3.symbol().type( shapeScale(d.source) ).size(shapeSizeSelected)())
 
         }
@@ -541,13 +594,17 @@ function drawChart(dataset) {
 
   }
 
-  function drawTrail(isin) {
+  function drawTrail(groupingID) {
 
-    const sliderValue = state.slider || slider.value()
+    const selectedPeriodLength = state.selected_period_length || getSelectedPeriodLength()
+    const sliderValues = state.slider || [ getSliderValuePeriodStart(), slider.value() ]
 
     const trailData = dataset
-      .filter(d => d.isin == isin && d.source == 'shareclass')
-      .filter(d => d.periodStart > sliderValue)
+      .filter(d => d.groupingID == groupingID && d.source == 'share')
+      .filter(d => d.periodLength == selectedPeriodLength)
+      .filter(d => d.periodEnd > d3.timeWeek.offset(sliderValues[1], -2))
+
+    trailData.sort((a, b) => { b.periodStart - a.periodStart })
 
     innerChart
       .append('path')
@@ -566,6 +623,9 @@ function drawChart(dataset) {
           .classed('trail', true)
           .attr('cx', d => xScale(d.volatility))
           .attr('cy', d => yScale(d.performance))
+
+    d3.selectAll('path.symbol')
+      .raise()
 
   }
 
@@ -620,14 +680,47 @@ function drawChart(dataset) {
   function tooltipText(d) {
 
     const text = ''
-             + '\nsource: ' + d.source
-             + '\nshare class: ' + d.shareClass
+             + '\nfund name: ' + d.name
              + '\nISIN code: ' + d.isin
-             + '\nstart date: ' + d3.timeFormat('%Y %b %d')(d.periodStart)
-             + '\nperf: ' + (d.performance * 100).toFixed(1) + '%'
-             + '\nvol: ' + (d.volatility * 100).toFixed(1) + '%'
+             + '\nmstarcode: ' + d.mstarcode
+             + '\nsource: ' + d.source
              + '\nasset type: ' + d.assetType
+             + '\nstart date: ' + d3.timeFormat('%Y %b %d')(d.periodStart)
+             + '\nend date: ' + d3.timeFormat('%Y %b %d')(d.periodEnd)
+             + '\nperiod length: ' + d.periodLength + ' years'
+             + '\nperformance: ' + (d.performance * 100).toFixed(1) + '%'
+             + '\nvolatility: ' + (d.volatility * 100).toFixed(1) + '%'
     return text
+
+  }
+
+  function getSelectedPeriodLength() {
+
+    const numYears = parseInt(d3.select('ul.years input[type=radio]:checked').property('value'))
+    return numYears
+
+  }
+
+  function getSliderValuePeriodStart() {
+
+    const numYears = getSelectedPeriodLength()
+    const periodEndDate = slider.value()
+    const periodStartDate = d3.timeYear.offset(periodEndDate, -numYears)
+
+    return periodStartDate
+
+  }
+
+  function updateSliderPeriodLine() {
+
+    const periodStartDate = getSliderValuePeriodStart()
+
+    const x1 = sliderScale(periodStartDate)
+    const x2 = originalSliderLine.attr('x2')
+
+    sliderPeriodLine
+      .attr('x1', x1)
+      .attr('x2', x2)
 
   }
 

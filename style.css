@@ -11,7 +11,7 @@ g.chart rect.background {
   fill: #f0f0f0;
   }
 
-text.share-class-name {
+text.fund-name {
   font-family: Chronicle Display,Scala Sans Pro,sans-serif;
   font-size: 16pt;
   }
@@ -59,14 +59,16 @@ g#slider line {
 
 g#slider line.track-fill, g#slider line.track-inset {
   stroke-width: 9px;
-  }
-
-g#slider line.track-fill {
   stroke: #f0f0f0;
   }
 
-g#slider line.track-inset {
+g#slider line.track-fill.fixed-period {
+  stroke-width: 12px;
   stroke: #ffb600;
+  }
+
+g#slider g.parameter-value path.handle {
+  visibility: hidden;
   }
 
 g#slider text#play-button {
@@ -95,16 +97,26 @@ div#vis ul li label {
   text-transform: uppercase;
   font-family: FF Scala Sans Pro,Trebuchet MS;
   font-size: 12px;
-  color: #f0f0f0;
-  border-color: #f0f0f0;
   }
 
-div#vis ul li input[type=checkbox] {
+div#vis ul li input[type=checkbox], div#vis ul li input[type=radio] {
   position: relative;
   top: 2px;
   padding: 0;
   margin: 0 0 0 9px;
+  }
+
+div#vis ul li input[type=radio] {
+  top: 3px;
+  }
+
+div#vis ul.asset-types li input[type=checkbox] {
   accent-color: white;
+  }
+
+div#vis ul.asset-types li label {
+  color: #f0f0f0;
+  border-color: #f0f0f0;
   }
 
 path.symbol {
