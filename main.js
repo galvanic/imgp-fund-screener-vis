@@ -27,13 +27,13 @@ function formatDataset(d) {
 
 function drawChart(dataset) {
 
+  dataset.sort((a, b) => { b.periodStart - a.periodStart })
   dataset
     .forEach(i => {
       i.peers = i.source == 'category'
       i.benchmark = i.source == 'bench'
     })
 
-  dataset.sort((a, b) => { b.periodStart - a.periodStart })
 
   //
   // CHART CONFIG
@@ -56,7 +56,7 @@ function drawChart(dataset) {
 
   const shapeSizeDefault = 200
   const shapeSizeFocused = 500
-  const shapeSizeSelected = 250
+  const shapeSizeSelected = 300
 
   const shapesMapping = {
       'share': d3.symbolCircle
@@ -101,9 +101,10 @@ function drawChart(dataset) {
   svg.append('clipPath')
     .attr('id', 'clip')
     .append('rect')
-      .attr('width', width)
+      // leave space for datapoints at 0% volatility, right at the edge
+      .attr('width', width+10)
       .attr('height', height)
-      .attr('x', 0)
+      .attr('x', 0-10)
       .attr('y', 0)
 
   const innerChart = svg
@@ -577,9 +578,10 @@ function drawChart(dataset) {
     d3.selectAll('title.tooltip')
       .remove()
 
-    selection.append('title')
-      .classed('tooltip', true)
-      .text(tooltipText)
+    d3.selectAll('path.symbol')
+      .append('title')
+        .classed('tooltip', true)
+        .text(tooltipText)
 
   }
 
@@ -606,8 +608,6 @@ function drawChart(dataset) {
       .filter(d => d.groupingID == groupingID && d.source == 'share')
       .filter(d => d.periodLength == selectedPeriodLength)
       .filter(d => d.periodEnd > d3.timeWeek.offset(sliderValues[1], -2))
-
-    trailData.sort((a, b) => { b.periodStart - a.periodStart })
 
     innerChart
       .append('path')
@@ -641,7 +641,7 @@ function drawChart(dataset) {
 
     svg.transition()
       .delay(200)
-      .duration(18000)
+      .duration(60000)
       .ease(d3.easeLinear)
       .tween('start_date', function(){
 
@@ -678,12 +678,16 @@ function drawChart(dataset) {
 
   }
 
-  function enableZoom() { innerChartBackground.call(zoom) }
+  function enableZoom() {
+
+    //innerChartBackground.call(zoom)
+
+  }
 
   function tooltipText(d) {
 
     const text = ''
-             + '\nfund name: ' + d.name
+             + '\nname: ' + d.name
              + '\nISIN code: ' + d.isin
              + '\nmstarcode: ' + d.mstarcode
              + '\nsource: ' + d.source
