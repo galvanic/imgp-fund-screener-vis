@@ -641,7 +641,7 @@ function drawChart(dataset) {
 
     svg.transition()
       .delay(200)
-      .duration(60000)
+      .duration(100000)
       .ease(d3.easeLinear)
       .tween('start_date', function(){
 
