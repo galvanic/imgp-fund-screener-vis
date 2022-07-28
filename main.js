@@ -216,7 +216,10 @@ function drawChart(dataset) {
     .append('ul')
       .classed('asset-types', true)
 
-  const assetTypes = new Set(dataset.map(d => d.assetType))
+  const assetTypes = new Set(dataset
+    .filter(d => d.assetType != '') // TODO roundabout fix for bug where bench&cat have assettype
+    .map(d => d.assetType)
+  )
 
   // TODO refactor below in d3's declarative way instead of procedural
   assetTypes.forEach((i) => {
