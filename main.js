@@ -39,7 +39,7 @@ function drawChart(dataset) {
   // CHART CONFIG
   //
 
-  const sliderWidth = 500
+  const sliderWidth = 1090
   const spaceForPlayButton = 30
   const sliderValueAtPageLoad = d3.max(dataset, d => d.periodEnd)
   const defaultPeriodLength = 3 // years
@@ -54,9 +54,14 @@ function drawChart(dataset) {
   const width = totalWidth - margin.left - margin.right
   const height = totalHeight - margin.top - margin.bottom
 
-  const shapeSizeDefault = 200
-  const shapeSizeFocused = 500
-  const shapeSizeSelected = 300
+  const shapeSizeDefault = 300
+  const shapeSizeFocused = 700
+  const shapeSizeSelected = 400
+
+  const sizeMappingIfSelected = {
+      'true': shapeSizeSelected
+    , 'false': shapeSizeDefault
+  }
 
   const shapesMapping = {
       'share': d3.symbolCircle
@@ -88,6 +93,7 @@ function drawChart(dataset) {
     .nice()
 
   const shapeScale = d3.scaleOrdinal(Object.keys(shapesMapping), Object.values(shapesMapping))
+  const sizeScale = d3.scaleOrdinal(Object.keys(sizeMappingIfSelected), Object.values(sizeMappingIfSelected))
 
   //
   // DRAW CHART
@@ -245,6 +251,18 @@ function drawChart(dataset) {
       d3.selectAll('input[type=checkbox]').each(function(i) {
         if (this.checked) { chosenAssetTypes.push(this.name) }
       })
+
+      // if unhighlighted included one that was selected, reset selection to none
+      const assetTypeOfSelected = dataset
+        .filter(d => d.groupingID == state.selected_ids)
+        .filter(d => d.source == 'share')
+        .map(d => d.assetType)
+        [0]
+
+      if (!chosenAssetTypes.includes(assetTypeOfSelected)) {
+        state.selected_ids = null
+        updateOnInput()
+      }
 
       if (chosenAssetTypes.length > 0) {
 
@@ -425,6 +443,7 @@ function drawChart(dataset) {
         i.background = false
       })
 
+    // TODO ohh the whole trail is redrawn each time ! hence the un-smoothness of transitions
     d3.selectAll('.trail')
       .remove()
 
@@ -457,7 +476,7 @@ function drawChart(dataset) {
   function drawData(dataset) {
 
     innerChart.selectAll('path.symbol')
-      .data(dataset, d => d.mstarcode)
+      .data(dataset, d => d.mstarcode + d.periodLength)
       .join(selectionEnter, selectionUpdate, selectionExit)
 
   }
@@ -468,7 +487,7 @@ function drawChart(dataset) {
       .append('path')
 
     dots
-      .attr('d', d => d3.symbol().type( shapeScale(d.source) ).size(shapeSizeDefault)())
+      .attr('d', d => d3.symbol().type( shapeScale(d.source) ).size(1)())
       .attr('class', d => d.assetType)
       .classed('symbol', true) // TODO find out why this needs to be placed after the previous lines
       .classed('selected', d => d.selected)
@@ -476,6 +495,7 @@ function drawChart(dataset) {
       .classed('peers', d => d.peers)
       .classed('benchmark', d => d.benchmark)
       .call(positionDot)
+      .call(dotStyling)
       .on('click', (event, d) => {
         // TODO factor out A. when a new selected group is drawn, B. when group is de-selected
 
@@ -483,13 +503,18 @@ function drawChart(dataset) {
         // TODO fix bug: maybe this is causing a glitch
         dots
           .attr('d', d => d3.symbol().type( shapeScale(d.source) ).size(shapeSizeDefault)())
+          .transition()
+            .duration(200)
+            .style('opacity', 0.1)
+
+        let thisDot = d3.select(event.target)
+
+        thisDot
+          .attr('d', d => d3.symbol().type( shapeScale(d.source) ).size(shapeSizeFocused)())
+          .raise()
 
         state.selected_ids = d.groupingID
         updateOnInput()
-
-        d3.select(event.target)
-          .attr('d', d => d3.symbol().type( shapeScale(d.source) ).size(shapeSizeFocused)())
-          .raise()
 
         d3.select('text.fund-name').text(d.name)
 
@@ -500,10 +525,11 @@ function drawChart(dataset) {
         dot.raise()
 
         dot
-          .classed('background', false)
           .transition()
             .duration(300)
+            .style('opacity', 1)
             .attr('d', d => d3.symbol().type( shapeScale(d.source) ).size(shapeSizeFocused)())
+          .on('end', () => { d3.select(this).classed('background', false) })
 
         d3.select('text.fund-name').text(d.name)
 
@@ -532,7 +558,12 @@ function drawChart(dataset) {
 
         if (dots_are_selected_but_not_this_dot) {
 
-          dot.classed('background', true)
+          dot
+            .transition()
+              .duration(400)
+              .style('opacity', 0.1)
+            .on('end', () => { d3.select(this).classed('background', true) })
+
           d3.select('text.fund-name').text('')
 
         }
@@ -558,6 +589,13 @@ function drawChart(dataset) {
 
       })
 
+    dots
+      .transition()
+        .delay(0)
+        .duration(150)
+        .ease(d3.easeLinear)
+        .attr('d', d => d3.symbol().type( shapeScale(d.source) ).size( sizeScale(d.selected.toString()) )() )
+
     dots.append('title')
       .classed('tooltip', true)
       .text(tooltipText)
@@ -567,13 +605,18 @@ function drawChart(dataset) {
   function selectionUpdate(selection) {
 
     selection
-      .classed('selected', d => d.selected)
-      .classed('background', d => d.background)
+      .call(dotStyling)
       .transition()
         .delay(0)
-        .duration(50)
+        .duration(200)
         .ease(d3.easeLinear)
         .call(positionDot)
+        .attr('d', d => d3.symbol().type( shapeScale(d.source) ).size(shapeSizeDefault)())
+      .on('end', () => {
+        d3.select(this)
+          .classed('selected', d => d.selected)
+          .classed('background', d => d.background)
+      })
 
     d3.selectAll('title.tooltip')
       .remove()
@@ -588,6 +631,13 @@ function drawChart(dataset) {
   function selectionExit(selection) {
 
     selection
+      .transition()
+        .delay(0)
+        .duration(100)
+        .ease(d3.easeLinear)
+        .attr('d', d => d3.symbol().type( shapeScale(d.source) ).size(1)())
+        .style('fill-opacity', 0)
+        .style('opacity', 0)
       .remove()
 
   }
@@ -599,7 +649,15 @@ function drawChart(dataset) {
 
   }
 
+  function dotStyling(dots) {
+
+    dots
+      .style('fill-opacity', 1)
+
+  }
+
   function drawTrail(groupingID) {
+    // TODO it seems more logical for the trail to be linked to mstarcode
 
     const selectedPeriodLength = state.selected_period_length || getSelectedPeriodLength()
     const sliderValues = state.slider || [ getSliderValuePeriodStart(), slider.value() ]
@@ -641,7 +699,7 @@ function drawChart(dataset) {
 
     svg.transition()
       .delay(200)
-      .duration(100000)
+      .duration(50000)
       .ease(d3.easeLinear)
       .tween('start_date', function(){
 

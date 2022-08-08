@@ -120,19 +120,13 @@ div#vis ul.asset-types li label {
   }
 
 path.symbol {
-  opacity: 90%;
-  fill-opacity: 100%;
-  stroke-width: 2px;
+  stroke-width: 0px;
   }
 
 path.symbol.selected {
-  stroke: #e0e0e0;
-  fill-opacity: 100%;
-  stroke-width: 1px;
   }
 
 path.symbol.background {
-  opacity: 20%;
   }
 
 .bonds         { background-color: #65BAAF; fill: #65BAAF; stroke: #65BAAF; }
