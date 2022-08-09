@@ -69,26 +69,29 @@ function drawChart(dataset) {
     , 'category': d3.symbolWye
   }
 
+  const timingDotMovement = 200 // msec, used also for zoom axis & grid change
+
   // global tracking of state / interaction history / user journey; this will be updated
   const state = {
       'selected_ids': null
     , 'selected_period_length': null
     , 'highlighted_ids': null
     , 'slider': null
-    , 'zoom': null
   }
 
   //
   // SCALES
   //
 
+  const xDomain = d3.extent(dataset, d => d.volatility )
   const xScale = d3.scaleLinear()
-    .domain(d3.extent(dataset, d => d.volatility ))
+    .domain(xDomain)
     .range([0, width])
     .nice()
 
+  const yDomain = d3.extent(dataset, d => d.performance )
   const yScale = d3.scaleLinear()
-    .domain(d3.extent(dataset, d => d.performance ))
+    .domain(yDomain)
     .range([height, 0])
     .nice()
 
@@ -380,34 +383,52 @@ function drawChart(dataset) {
   updateSliderPeriodLine()
 
   //
-  // ZOOM
+  // ZOOM via BRUSH
   //
 
-  const handleZoom = function(e) {
+  // followed this example: https://bl.ocks.org/mbostock/f48fcdb929a620ed97877e4678ab15e6
 
-    // compute the new scale
-    const newXScale = e.transform.rescaleX(xScale)
-    const newYScale = e.transform.rescaleY(yScale)
+  var idleTimeout
+  const idleDelay = 350
 
-    // update axes & grid
-    xAxisElement.call(xAxis.scale(newXScale))
-    yAxisElement.call(yAxis.scale(newYScale))
-    xGridElement.call(xGrid.scale(newXScale))
-    yGridElement.call(yGrid.scale(newYScale))
+  const brush = d3.brush()
+    .on('end', (event) => {
 
-    // TODO update drawn datapoints
-    state.zoom = null
+      const s = event.selection
+
+      if (!s) {
+
+        if (!idleTimeout) {
+          return idleTimeout = setTimeout(() => { idleTimeout = null }, idleDelay)
+        }
+        xScale.domain(xDomain)
+        yScale.domain(yDomain)
+
+      } else {
+
+        xScale.domain([ s[0][0], s[1][0] ].map(xScale.invert, xScale))
+        yScale.domain([ s[1][1], s[0][1] ].map(yScale.invert, yScale))
+
+        innerChart.call(brush.move, null)
+
+      }
+
+      zoomIn()
+
+    })
+
+  function zoomIn() {
+
     updateOnInput()
 
-    // TODO create a "reset zoom" button
+    const t = svg.transition().duration(timingDotMovement)
+
+    xAxisElement.transition(t).call(xAxis)
+    xGridElement.transition(t).call(xGrid)
+    yAxisElement.transition(t).call(yAxis)
+    yGridElement.transition(t).call(yGrid)
 
   }
-
-  const zoom = d3.zoom()
-    .scaleExtent([0.8, 3])
-    //.extent([[0, 0], [width, height]])
-    //.translateExtent([[-100, -100], [width + 90, height + 100]])
-    .on('zoom', handleZoom)
 
   enableZoom()
 
@@ -431,7 +452,6 @@ function drawChart(dataset) {
     const selectedPeriodLength = state.selected_period_length || getSelectedPeriodLength()
     const highlighted_ids = state.highlighted_ids || new Set(dataset.map(d => d.groupingID))
     const sliderValues = state.slider || [ getSliderValuePeriodStart(), slider.value() ]
-    const zoom = state.zoom || null
 
     const dots_are_selected = selected_ids !== null
 
@@ -607,8 +627,7 @@ function drawChart(dataset) {
     selection
       .call(dotStyling)
       .transition()
-        .delay(0)
-        .duration(200)
+        .duration(timingDotMovement)
         .ease(d3.easeLinear)
         .call(positionDot)
         .attr('d', d => d3.symbol().type( shapeScale(d.source) ).size(shapeSizeDefault)())
@@ -693,9 +712,7 @@ function drawChart(dataset) {
   function animateThroughTime() {
 
     playButton.text(pauseButtonText)
-
-    // disable zoom
-    innerChartBackground.on('.zoom', null)
+    disableZoom()
 
     svg.transition()
       .delay(200)
@@ -736,11 +753,8 @@ function drawChart(dataset) {
 
   }
 
-  function enableZoom() {
-
-    //innerChartBackground.call(zoom)
-
-  }
+  function disableZoom() { innerChart.on('.brush', null) }
+  function enableZoom() { innerChart.call(brush) }
 
   function tooltipText(d) {
 
