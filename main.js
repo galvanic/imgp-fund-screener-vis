@@ -1,6 +1,6 @@
 'use strict'
 
-const dataFilepath = 'dataset_Y135.csv'
+const dataFilepath = 'dataset.csv'
 
 d3.csv(dataFilepath, formatDataset)
   .then(drawChart)
