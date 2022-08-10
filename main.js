@@ -83,17 +83,19 @@ function drawChart(dataset) {
   // SCALES
   //
 
-  const xDomain = d3.extent(dataset, d => d.volatility )
   const xScale = d3.scaleLinear()
-    .domain(xDomain)
+    .domain(d3.extent(dataset, d => d.volatility ))
     .range([0, width])
     .nice()
 
-  const yDomain = d3.extent(dataset, d => d.performance )
   const yScale = d3.scaleLinear()
-    .domain(yDomain)
+    .domain(d3.extent(dataset, d => d.performance ))
     .range([height, 0])
     .nice()
+
+  // declare these defaults after the d3 scale is declared, to take the .nice() into account
+  const xDomainDefault = xScale.domain()
+  const yDomainDefault = yScale.domain()
 
   const shapeScale = d3.scaleOrdinal(Object.keys(shapesMapping), Object.values(shapesMapping))
   const sizeScale = d3.scaleOrdinal(Object.keys(sizeMappingIfSelected), Object.values(sizeMappingIfSelected))
@@ -336,6 +338,7 @@ function drawChart(dataset) {
   const playButton = svg.select('g#slider')
     .append('text')
       .attr('id', 'play-button')
+      .classed('button', true)
       .attr('transform', `translate(${sliderWidth + spaceForPlayButton - 3}, ${5})`)
       .text(playButtonText)
       .on('click', function(event) {
@@ -398,37 +401,50 @@ function drawChart(dataset) {
 
       if (!s) {
 
+        // this controls returning to starting zoom level on double click
+
         if (!idleTimeout) {
           return idleTimeout = setTimeout(() => { idleTimeout = null }, idleDelay)
         }
-        xScale.domain(xDomain)
-        yScale.domain(yDomain)
+
+        var xDomainNew = xDomainDefault
+        var yDomainNew = yDomainDefault
 
       } else {
 
-        xScale.domain([ s[0][0], s[1][0] ].map(xScale.invert, xScale))
-        yScale.domain([ s[1][1], s[0][1] ].map(yScale.invert, yScale))
+        var xDomainNew = [ s[0][0], s[1][0] ].map(xScale.invert, xScale)
+        var yDomainNew = [ s[1][1], s[0][1] ].map(yScale.invert, yScale)
 
         innerChart.call(brush.move, null)
 
       }
 
-      zoomIn()
+      zoom(xDomainNew, yDomainNew)
 
     })
 
-  function zoomIn() {
+  function zoom(xDomain, yDomain) {
+
+    xScale.domain(xDomain)
+    yScale.domain(yDomain)
 
     updateOnInput()
 
     const t = svg.transition().duration(timingDotMovement)
-
     xAxisElement.transition(t).call(xAxis)
     xGridElement.transition(t).call(xGrid)
     yAxisElement.transition(t).call(yAxis)
     yGridElement.transition(t).call(yGrid)
 
   }
+
+  svg // reset zoom button
+    .append('text')
+      .attr('id', 'reset-zoom')
+      .classed('button', true)
+      .text('reset zoom')
+      .attr('transform', `translate(${margin.left + width - 80}, ${margin.top + 20})`)
+      .on('click', (event) => { zoom(xDomainDefault, yDomainDefault) })
 
   enableZoom()
 
@@ -713,6 +729,9 @@ function drawChart(dataset) {
 
     playButton.text(pauseButtonText)
     disableZoom()
+
+    // TODO ideally this zoom transition would be done at the same time in one smooth movement, overlapping with the historical animation start
+    zoom(xDomainDefault, yDomainDefault)
 
     svg.transition()
       .delay(200)

@@ -72,10 +72,21 @@ g#slider g.parameter-value path.handle {
   }
 
 g#slider text#play-button {
-  cursor: pointer;
   fill: #003b4a;
   stroke: #003b4a;
   stroke-width: 1px;
+  }
+
+text.button, path.symbol {
+  cursor: pointer;
+  }
+
+text#reset-zoom {
+  fill: #003b4a;
+  }
+
+text#reset-zoom:hover {
+  text-decoration: underline;
   }
 
 g.focus line {
