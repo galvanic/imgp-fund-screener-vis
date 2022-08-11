@@ -134,12 +134,6 @@ path.symbol {
   stroke-width: 0px;
   }
 
-path.symbol.selected {
-  }
-
-path.symbol.background {
-  }
-
 .bonds         { background-color: #65BAAF; fill: #65BAAF; stroke: #65BAAF; }
 .alternative   { background-color: #71A850; fill: #71A850; stroke: #71A850; }
 .mixed         { background-color: #E43D30; fill: #E43D30; stroke: #E43D30; }
@@ -147,6 +141,7 @@ path.symbol.background {
 .fund_of_funds { background-color: #AC3C72; fill: #AC3C72; stroke: #AC3C72; }
 
 path.symbol.peers, path.symbol.benchmark {
+  cursor: help;
   fill: #143b4a;
   stroke: #e0e0e0;
   }

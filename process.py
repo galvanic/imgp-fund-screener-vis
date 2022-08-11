@@ -52,8 +52,9 @@ def unflatten_columns(df):
 
     return df
 
+## DATA PARSERS
 
-def main(fp_weekly_data):
+def parse_weekly_data(fp_weekly_data):
 
     df = (pd.read_excel(fp_weekly_data, header=(6, 7, 8, 9), sheet_name='Sheet1')
         .dropna(axis='columns', how='all')
@@ -98,6 +99,10 @@ def main(fp_weekly_data):
              ))
          )
 
+    return df_weekly
+
+def parse_historical_data():
+
     df_historical = (pd.read_csv(FP_HISTORICAL_DATA, header=0, sep=';')
         .rename(columns=tidy_name)
         [[ 'code', 'end_date', 'perf_y1', 'perf_y3', 'perf_y5', 'vol_y1', 'vol_y3', 'vol_y5' ]]
@@ -117,6 +122,10 @@ def main(fp_weekly_data):
         .assign(value=lambda df: df['value'].str.replace('%', '').astype(float))
         )
 
+    return df_historical
+
+def concat_datasets(df_weekly, df_historical):
+
     df_data = (pd.concat(axis='rows', objs=[ df_weekly, df_historical ])
         .set_index([ 'group_investment', 'isin', 'mstarcode', 'base_currency',
                      'period_length_yrs', 'end_date', 'start_date',
@@ -126,6 +135,14 @@ def main(fp_weekly_data):
         .reset_index(drop=False)
         .drop(axis='columns', labels=[ 'group_investment', 'base_currency', 'isin', ])
         )
+
+    return df_data
+
+def main(fp_weekly_data):
+
+    df_weekly = parse_weekly_data(fp_weekly_data)
+    df_historical = parse_historical_data()
+    df_data = concat_datasets(df_weekly, df_historical)
 
     df_final = (pd.read_excel(FP_METADATA, sheet_name='Sheet1', header=0)
         [[ 'fund_type', 'share_isin',
