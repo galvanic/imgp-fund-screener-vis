@@ -1,6 +1,16 @@
 #! /bin/env/python3
 
 '''
+This python script is run in the command line as such:
+
+```bash
+$ python3 process.py "iMGP Funds Report New_DDMMYYYY.xlsx" > dataset.csv
+```
+
+The script prints to `stdout` the data in csv format, with the column names included. This output can then be redirected using `>` operator to create a file named `dataset.csv` as expected
+
+See README for more details on expected inputs and outputs.
+
 '''
 
 import sys
