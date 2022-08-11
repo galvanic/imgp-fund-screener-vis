@@ -11,11 +11,6 @@ g.chart rect.background {
   fill: #f0f0f0;
   }
 
-text.fund-name {
-  font-family: Chronicle Display,Scala Sans Pro,sans-serif;
-  font-size: 16pt;
-  }
-
 g.axis line {
   stroke: black;
   }

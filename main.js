@@ -234,12 +234,6 @@ function drawChart(dataset) {
       .attr('width', width)
       .attr('height', height)
 
-  svg // fund name
-    .append('text')
-      .classed('fund-name', true)
-      .attr('transform', `translate(${margin.left}, ${margin.top - 35})`)
-      .text('')
-
   //
   // GRID
   //
@@ -556,7 +550,6 @@ function drawChart(dataset) {
         state.selected_ids = d.groupingID
         updateOnInput()
 
-        d3.select('text.fund-name').text(d.name)
 
       })
       .on('mouseover', (event, d) => {
@@ -570,8 +563,6 @@ function drawChart(dataset) {
             .style('opacity', 1)
             .attr('d', d => d3.symbol().type( shapeScale(d.source) ).size(shapeSizeFocused)())
           .on('end', () => { d3.select(this).classed('background', false) })
-
-        d3.select('text.fund-name').text(d.name)
 
         // draw the focus line
 
@@ -739,7 +730,7 @@ function drawChart(dataset) {
 
     svg.transition()
       .delay(200)
-      .duration(50000)
+      .duration(50000) // msec
       .ease(d3.easeLinear)
       .tween('start_date', function(){
 
