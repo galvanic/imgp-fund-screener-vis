@@ -101,6 +101,108 @@ function drawChart(dataset) {
   const sizeScale = d3.scaleOrdinal(Object.keys(sizeMappingIfSelected), Object.values(sizeMappingIfSelected))
 
   //
+  // FILTERING INPUT BY ASSET TYPE
+  //
+
+  const AssetTypeList = d3.select('div#vis')
+    .append('ul')
+      .classed('asset-types', true)
+
+  const assetTypes = new Set(dataset
+    .filter(d => d.assetType != '') // TODO roundabout fix for bug where bench&cat have assettype
+    .map(d => d.assetType)
+  )
+
+  // TODO refactor below in d3's declarative way instead of procedural
+  assetTypes.forEach((i) => {
+    AssetTypeList
+      .append('li')
+        .append('label')
+          .classed(i, true)
+          .text(i.replace(/_/g, ' '))
+          .append('input')
+            .attr('type', 'checkbox')
+            .attr('name', i)
+  })
+
+  //
+  // FILTERING INPUT BY LOOKBACK PERIOD LENGTH
+  //
+
+  d3.selectAll('input[type=checkbox]')
+    .each(function(i) {
+      this.checked = true
+    })
+    .on('change', function(event) {
+
+      var chosenAssetTypes = []
+
+      d3.selectAll('input[type=checkbox]').each(function(i) {
+        if (this.checked) { chosenAssetTypes.push(this.name) }
+      })
+
+      // if unhighlighted included one that was selected, reset selection to none
+      const assetTypeOfSelected = dataset
+        .filter(d => d.groupingID == state.selected_ids)
+        .filter(d => d.source == 'share')
+        .map(d => d.assetType)
+        [0]
+
+      if (!chosenAssetTypes.includes(assetTypeOfSelected)) {
+        state.selected_ids = null
+        updateOnInput()
+      }
+
+      if (chosenAssetTypes.length > 0) {
+
+        const filtered = new Set(dataset
+          .filter(d => chosenAssetTypes.includes(d.assetType))
+          .map(d => d.groupingID)
+        )
+
+        state.highlighted_ids = filtered
+        updateOnInput()
+
+      } else { // everything is unticked => show all
+
+        state.highlighted_ids = new Set(dataset.map(d => d.groupingID))
+        updateOnInput()
+
+      }
+
+    })
+
+  const yearsList = d3.select('div#vis')
+    .append('ul')
+      .classed('years', true)
+
+  const years = new Set(dataset.map(d => d.periodLength))
+
+  // TODO refactor below in d3's declarative way instead of procedural
+  years.forEach((i) => {
+    yearsList
+      .append('li')
+        .append('label')
+          .text(`${i} years`)
+          .append('input')
+            .attr('type', 'radio')
+            .attr('name', 'years')
+            .attr('value', i)
+            .classed(`y${i}`, true)
+  })
+
+  yearsList.select(`input.y${defaultPeriodLength}`)
+    .attr('checked', true)
+
+  yearsList.selectAll('input[type=radio]')
+    .on('change', function(event) {
+
+      updateSliderPeriodLine()
+      updateOnInput()
+
+    })
+
+  //
   // DRAW CHART
   //
 
@@ -221,74 +323,6 @@ function drawChart(dataset) {
     .text('performance →')
 
   //
-  // FILTERING INPUT
-  //
-
-  const AssetTypeList = d3.select('div#vis')
-    .append('ul')
-      .classed('asset-types', true)
-
-  const assetTypes = new Set(dataset
-    .filter(d => d.assetType != '') // TODO roundabout fix for bug where bench&cat have assettype
-    .map(d => d.assetType)
-  )
-
-  // TODO refactor below in d3's declarative way instead of procedural
-  assetTypes.forEach((i) => {
-    AssetTypeList
-      .append('li')
-        .append('label')
-          .classed(i, true)
-          .text(i.replace(/_/g, ' '))
-          .append('input')
-            .attr('type', 'checkbox')
-            .attr('name', i)
-  })
-
-  d3.selectAll('input[type=checkbox]')
-    .each(function(i) {
-      this.checked = true
-    })
-    .on('change', function(event) {
-
-      var chosenAssetTypes = []
-
-      d3.selectAll('input[type=checkbox]').each(function(i) {
-        if (this.checked) { chosenAssetTypes.push(this.name) }
-      })
-
-      // if unhighlighted included one that was selected, reset selection to none
-      const assetTypeOfSelected = dataset
-        .filter(d => d.groupingID == state.selected_ids)
-        .filter(d => d.source == 'share')
-        .map(d => d.assetType)
-        [0]
-
-      if (!chosenAssetTypes.includes(assetTypeOfSelected)) {
-        state.selected_ids = null
-        updateOnInput()
-      }
-
-      if (chosenAssetTypes.length > 0) {
-
-        const filtered = new Set(dataset
-          .filter(d => chosenAssetTypes.includes(d.assetType))
-          .map(d => d.groupingID)
-        )
-
-        state.highlighted_ids = filtered
-        updateOnInput()
-
-      } else { // everything is unticked => show all
-
-        state.highlighted_ids = new Set(dataset.map(d => d.groupingID))
-        updateOnInput()
-
-      }
-
-    })
-
-  //
   // SLIDER
   //
 
@@ -352,36 +386,6 @@ function drawChart(dataset) {
         }
 
       })
-
-  const yearsList = d3.select('div#vis')
-    .append('ul')
-      .classed('years', true)
-
-  const years = new Set(dataset.map(d => d.periodLength))
-
-  // TODO refactor below in d3's declarative way instead of procedural
-  years.forEach((i) => {
-    yearsList
-      .append('li')
-        .append('label')
-          .text(`${i} years`)
-          .append('input')
-            .attr('type', 'radio')
-            .attr('name', 'years')
-            .attr('value', i)
-            .classed(`y${i}`, true)
-  })
-
-  yearsList.select(`input.y${defaultPeriodLength}`)
-    .attr('checked', true)
-
-  d3.selectAll('input[type=radio]')
-    .on('change', function(event) {
-
-      updateSliderPeriodLine()
-      updateOnInput()
-
-    })
 
   updateSliderPeriodLine()
 
